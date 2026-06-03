@@ -1,0 +1,26 @@
+<section class="panel-card">
+  <h1>Configuração do JIFC</h1>
+  <p class="panel-subtitle">Defina os prazos das inscrições e do sorteio de chaves para organizar o evento.</p>
+
+  <article class="mini-card">
+    <h2>Prazos atuais</h2>
+    <ul class="profile-list">
+      <li><span>Inscrição de modalidades</span><strong><%= configuracoes.inicio_inscricao_modalidades %> a <%= configuracoes.fim_inscricao_modalidades %></strong></li>
+      <li><span>Inscrição de atletas</span><strong><%= configuracoes.inicio_inscricao_atletas %> a <%= configuracoes.fim_inscricao_atletas %></strong></li>
+      <li><span>Sorteio de chaves</span><strong><%= configuracoes.inicio_sorteio_chaves %> a <%= configuracoes.fim_sorteio_chaves %></strong></li>
+    </ul>
+  </article>
+
+  <article class="mini-card">
+    <h2>Atualizar prazos</h2>
+    <form class="form-grid" action="/admin/configurar/salvar" method="POST">
+      <label>Início inscrições modalidades<input type="date" name="inicioInscricoesModalidades" value="<%= configuracoes.inicio_inscricao_modalidades %>" required></label>
+      <label>Fim inscrições modalidades<input type="date" name="fimInscricoesModalidades" value="<%= configuracoes.fim_inscricao_modalidades %>" required></label>
+      <label>Início inscrições atletas<input type="date" name="inicioInscricoesAtletas" value="<%= configuracoes.inicio_inscricao_atletas %>" required></label>
+      <label>Fim inscrições atletas<input type="date" name="fimInscricoesAtletas" value="<%= configuracoes.fim_inscricao_atletas %>" required></label>
+      <label>Início sorteio<input type="date" name="inicioSorteio" value="<%= configuracoes.inicio_sorteio_chaves %>" required></label>
+      <label>Fim sorteio<input type="date" name="fimSorteio" value="<%= configuracoes.fim_sorteio_chaves %>" required></label>
+      <button class="btn btn-primary" type="submit">Salvar configuração</button>
+    </form>
+  </article>
+</section>

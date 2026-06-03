@@ -1,0 +1,40 @@
+<section class="panel-card">
+  <h1>Chaveamento do JIFC</h1>
+  <p class="panel-subtitle">O sorteio é montado a partir das modalidades e campus cadastrados no sistema.</p>
+
+  <article class="mini-card">
+    <h2>Modalidades disponíveis</h2>
+    <ul class="profile-list">
+      <% modalidades.forEach((item) => { %>
+        <li><span><%= item.nome %></span><strong><%= item.genero %></strong></li>
+      <% }) %>
+    </ul>
+  </article>
+
+  <article class="mini-card">
+    <h2>Chaves geradas</h2>
+    <ul class="bracket-list">
+      <% chaves.forEach((item) => { %>
+        <li><strong><%= item.nome %></strong> — <%= item.grupo %></li>
+      <% }) %>
+    </ul>
+  </article>
+
+  <article class="mini-card">
+    <h2>Jogos programados</h2>
+    <div class="game-grid">
+      <% jogos.forEach((jogo) => { %>
+        <article class="game-card">
+          <p class="game-time"><%= jogo.data %> · <%= jogo.horario %></p>
+          <h3><%= jogo.casa %> x <%= jogo.fora %></h3>
+          <p class="game-result">Modalidade: <%= jogo.modalidade %></p>
+          <p class="game-result">Placar: <%= jogo.placar %></p>
+          <span class="status-pill"><%= jogo.status %></span>
+          <div class="profile-actions" style="margin-top: 0.75rem;">
+            <a class="btn btn-secondary" href="/admin/jogos/placar/<%= jogo.id %>">Atualizar placar</a>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  </article>
+</section>
