@@ -131,7 +131,8 @@ router.get('/perfil', async function(req, res, next) {
         textoAtletas,
         mostrarAcoesInscricao,
         atletasCampus,
-        jogosCampus
+        jogosCampus,
+        anoJifc: configuracoes?.ano_evento || 2026 // ◄ ADICIONE APENAS ESTA LINHA        
     });
 });
 

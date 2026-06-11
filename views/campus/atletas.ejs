@@ -1,40 +1,113 @@
-<section class="panel-card">
-  <h1>Cadastro e substituição de atletas</h1>
-  <p class="panel-subtitle">O campus registra atletas em fase regular ou faz substituição quando houver necessidade de laudo.</p>
+<section class="profile-shell">
 
-  <article class="mini-card">
-    <h2>Inscrição regular</h2>
-    <form class="form-grid" action="/campus/atletas/cadastrar" method="POST">
-      <label>Nome<input type="text" name="nome" required></label>
-      <label>Matrícula<input type="text" name="matricula" required></label>
-      <label>Modalidade<input type="text" name="modalidade" value="Futsal Masculino" required></label>
-      <label>Gênero<select name="genero"><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></label>
-      <label>Data de nascimento<input type="date" name="dataNascimento" required></label>
-      <button class="btn btn-primary" type="submit">Cadastrar atleta</button>
-    </form>
-  </article>
+  <% if (typeof prazoAberto !== 'undefined' && !prazoAberto) { %>
+  <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; font-weight: bold; text-align: center; width: 100%;">
+    ⚠ Período de inscrições ENCERRADO ou não iniciado para esta etapa!
+    <br>
+    <small style="font-weight: normal; color: rgba(255,255,255,0.6);">
+      Prazo: <%= prazos.inicio ? prazos.inicio : 'Não definido' %> até <%= prazos.fim ? prazos.fim : 'Não definido' %>
+    </small>
+  </div>
+<% } %>
 
-  <article class="mini-card">
-    <h2>Substituição com laudo</h2>
-    <form class="form-grid" action="/campus/atletas/substituir" method="POST">
-      <label>Nome<input type="text" name="nome" required></label>
-      <label>Matrícula<input type="text" name="matricula" required></label>
-      <label>Modalidade<input type="text" name="modalidade" value="Futsal Masculino" required></label>
-      <label>Motivo<input type="text" name="motivo" value="Substituição por laudo" required></label>
-      <button class="btn btn-secondary" type="submit">Enviar substituição</button>
-    </form>
-  </article>
+  <article class="profile-card profile-card--wide">
+    
+    <header class="institution-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+      <div class="institution-details">
+        <div class="badge-row">
+          <span class="badge badge--role">Delegação</span>
+          <span class="badge badge--status">Fase: Inscrição Regular</span>
+        </div>
+        <h1 class="institution-title" style="color: #ece42d;">Atletas do Campus</h1>
+        <p class="institution-meta">Gerencie os competidores e as suas respetivas modalidades para o <%= nomeCampus %>.</p>
+      </div>
+    </header>
 
-  <article class="mini-card">
-    <h2>Atletas registrados</h2>
-    <% if (atletas.length) { %>
-      <ul class="profile-list">
-        <% atletas.forEach((atleta) => { %>
-          <li><span><strong><%= atleta.nome %></strong> — <%= atleta.modalidade %></span><strong><%= atleta.status %></strong></li>
-        <% }) %>
-      </ul>
-    <% } else { %>
-      <p class="panel-subtitle">Nenhum atleta cadastrado ainda.</p>
-    <% } %>
+    <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.15); margin-bottom: 2.5rem;">
+      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;">Inscrever Novo Competidor</h3>
+      
+      <form action="/campus/atletas/cadastrar" method="POST" class="form-grid" style="align-items: flex-end;">
+        <label>
+          Nome do Atleta
+          <input type="text" name="nome" placeholder="Ex: Gabriel Silva" required class="premium-text-input">
+        </label>
+
+        <label>
+          Matrícula Académica
+          <input type="text" name="matricula" placeholder="Ex: 20261102" required class="premium-text-input">
+        </label>
+
+        <label>
+          Gênero
+          <select name="genero" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+            <option value="Masculino">Masculino</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Misto">Misto</option>
+          </select>
+        </label>
+
+        <label>
+          Modalidade
+          <select name="modalidade" required class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+            <option value="Futsal Masculino">Futsal Masculino</option>
+            <option value="Voleibol">Voleibol</option>
+            <option value="Basquete">Basquete</option>
+            <option value="Xadrez">Xadrez</option>
+          </select>
+        </label>
+
+        <button type="submit" class="btn btn-primary premium-action-btn addition-btn" style="height: 43px; font-weight: 700;">
+          + Adicionar
+        </button>
+      </form>
+    </div>
+
+    <div style="background: rgba(255, 255, 255, 0.01); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
+      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;">Lista de Atletas Registados</h3>
+      
+      <div style="overflow-x: auto;">
+        <table class="score-table">
+          <thead>
+            <tr style="color: #ece42d; border-bottom: 2px solid rgba(255,255,255,0.1);">
+              <th style="padding: 0.75rem 0.5rem;">Nome Completo</th>
+              <th>Matrícula</th>
+              <th>Modalidade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (typeof atletas !== 'undefined' && atletas.length > 0) { %>
+              <% atletas.forEach(function(atleta) { %>
+                <tr>
+                  <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
+                  <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
+                  <td><span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= atleta.modalidade %></span></td>
+                  <td>
+                    <% if (atleta.status === 'Regular') { %>
+                      <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
+                    <% } else { %>
+                      <span style="color: #ffb700; font-weight: bold;">⚠ Pendente</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="4" class="feedback-empty">
+                  Nenhum atleta inscrito até o momento.
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="dashboard-footer" style="margin-top: 2.5rem;">
+      <div class="utility-actions">
+        <a class="btn btn-secondary" href="/perfil">Voltar ao Perfil</a>
+      </div>
+    </footer>
+
   </article>
 </section>

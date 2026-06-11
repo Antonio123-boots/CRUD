@@ -11,6 +11,7 @@ function renderConfigurar(req, res) {
 
 function salvarConfiguracoes(req, res) {
   adminModel.salvarConfiguracoes({
+    ano_evento: req.body.anoEvento, // ◄ ADICIONE APENAS ESTA LINHA AQUI
     inicio_inscricao_modalidades: req.body.inicioInscricoesModalidades,
     fim_inscricao_modalidades: req.body.fimInscricoesModalidades,
     inicio_inscricao_atletas: req.body.inicioInscricoesAtletas,

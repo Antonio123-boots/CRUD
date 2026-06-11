@@ -51,7 +51,7 @@ function validarAtleta(atletaId) {
 async function getJogos() {
   try {
     const query = `
-      SELECT j.id, j.fase, j.status, j.placar,
+      SELECT j.id, j.fase, j.status, j.placar_casa, j.placar_fora,
              DATE_FORMAT(j.data_hora, '%d/%m') AS data,
              DATE_FORMAT(j.data_hora, '%H:%i') AS horario,
              c1.nome AS casa, c2.nome AS fora,
@@ -117,6 +117,10 @@ async function getModalidadesBanco() {
  * Busca todos os participantes (Campi ou Atletas Nominais) inscritos e confirmados na modalidade.
  * Filtra por subcategoria (individual/dupla) caso a modalidade seja o Tênis de Mesa.
  */
+/**
+ * Busca todos os participantes (Campi ou Atletas Nominais) inscritos e confirmados na modalidade.
+ * Filtra por subcategoria (individual/dupla) caso a modalidade seja o Tênis de Mesa.
+ */
 async function getInscritosModalidade(modalidadeId, subCategoria = 'geral') {
   try {
     const [mod] = await db.query('SELECT tipo_confronto, categoria, slug FROM modalidades WHERE id = ?', [modalidadeId]);
@@ -137,7 +141,7 @@ async function getInscritosModalidade(modalidadeId, subCategoria = 'geral') {
       return atletas;
     } else {
       const query = `
-        SELECT cm.id, c.nome AS nomeCampus, c.id AS campus_id
+        SELECT c.nome AS nomeCampus, c.id AS campus_id
         FROM campus_modalidade cm
         JOIN campus c ON cm.campus_id = c.id
         WHERE cm.modalidade_id = ?
@@ -150,7 +154,6 @@ async function getInscritosModalidade(modalidadeId, subCategoria = 'geral') {
     throw error;
   }
 }
-
 /**
  * Busca a divisão atual de grupos/chaves salvos no banco para exibição na área central.
  */
@@ -182,7 +185,8 @@ async function getChavesModalidade(modalidadeId, subCategoria = 'geral') {
 async function getJogosModalidade(modalidadeId, subCategoria = 'geral') {
   try {
     const query = `
-      SELECT j.id, j.fase, j.status, j.placar, DATE_FORMAT(j.data_hora, '%d/%m') AS data, DATE_FORMAT(j.data_hora, '%H:%i') AS horario, 
+      SELECT j.id, j.fase, j.status, j.placar_casa, j.placar_fora, 
+             DATE_FORMAT(j.data_hora, '%d/%m') AS data, DATE_FORMAT(j.data_hora, '%H:%i') AS horario, 
              c1.nome AS casa, c2.nome AS fora, a1.nome AS atletaCasa, a2.nome AS atletaFora, m.tipo_confronto 
       FROM jogos j 
       JOIN modalidades m ON j.modalidade_id = m.id 
@@ -275,11 +279,11 @@ async function resetarChaveamentoModalidade(modalidadeId, subCategoria = 'geral'
 }
 
 /**
- * Atualiza o placar final e estado de uma partida.
+ * Atualiza o placar final e estado de uma partida usando as novas colunas separadas.
  */
-async function atualizarPlacarJogo(jogoId, placar, status) {
+async function atualizarPlacarJogo(jogoId, placarCasa, placarFora, status) {
   try {
-    await db.query('UPDATE jogos SET placar = ?, status = ? WHERE id = ?', [placar, status, jogoId]);
+    await db.query('UPDATE jogos SET placar_casa = ?, placar_fora = ?, status = ? WHERE id = ?', [placarCasa, placarFora, status, jogoId]);
   } catch (error) {
     console.error("Erro ao salvar resultado de jogo:", error);
     throw error;
@@ -288,16 +292,49 @@ async function atualizarPlacarJogo(jogoId, placar, status) {
 
 async function salvarPlacar(jogoId, dados) {
   try {
-    const placar = `${dados.placar1 ?? 0} x ${dados.placar2 ?? 0}`;
+    const placarCasa = dados.placar1 ?? 0;
+    const placarFora = dados.placar2 ?? 0;
     const status = dados.status || 'Encerrado';
-    await atualizarPlacarJogo(Number(jogoId), placar, status);
-    return { jogoId: Number(jogoId), placar, status };
+    
+    await atualizarPlacarJogo(Number(jogoId), placarCasa, placarFora, status);
+    return { jogoId: Number(jogoId), placarCasa, placarFora, status };
   } catch (error) {
     console.error('Erro ao salvar placar via model:', error);
     throw error;
   }
 }
 
+/**
+ * Realiza a divisão dos inscritos em chaves matemáticas de forma automatizada (Sorteio)
+ * e aciona a gravação da estrutura de jogos.
+ */
+async function efetuarChaveamentoMatematico(modalidadeId, subCategoria = 'geral') {
+  try {
+    const inscritos = await getInscritosModalidade(modalidadeId, subCategoria);
+    
+    if (!inscritos || inscritos.length === 0) {
+      throw new Error("Não há inscritos suficientes para gerar o chaveamento desta modalidade.");
+    }
+
+    const inscritosSorteados = [...inscritos].sort(() => Math.random() - 0.5);
+    const tamanhoMaximoGrupo = 4;
+    const chavesMapeadas = {};
+    const letrasGrupo = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    let indiceLetra = 0;
+
+    for (let i = 0; i < inscritosSorteados.length; i += tamanhoMaximoGrupo) {
+      const letraAtual = letrasGrupo[indiceLetra] || `X${indiceLetra}`;
+      chavesMapeadas[letraAtual] = inscritosSorteados.slice(i, i + tamanhoMaximoGrupo);
+      indiceLetra++;
+    }
+
+    await persistirEstruturaChaveamento(modalidadeId, subCategoria, chavesMapeadas);
+    return true;
+  } catch (error) {
+    console.error("Erro interno no algoritmo de chaveamento matemático:", error);
+    throw error;
+  }
+}
 // Exportação completa de métodos
 module.exports = {
   getConfiguracoes,

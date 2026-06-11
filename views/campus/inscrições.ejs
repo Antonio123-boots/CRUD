@@ -1,1 +1,56 @@
+<section class="profile-shell">
+  <article class="profile-card profile-card--wide">
+    
+    <% if (typeof prazoAberto !== 'undefined' && !prazoAberto) { %>
+    <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; font-weight: bold; text-align: center; width: 100%;">
+        ⚠ Período de inscrições ENCERRADO ou não iniciado para esta etapa!
+        <br>
+        <small style="font-weight: normal; color: rgba(255,255,255,0.6);">
+        Prazo: <%= prazos.inicio ? prazos.inicio : 'Não definido' %> até <%= prazos.fim ? prazos.fim : 'Não definido' %>
+        </small>
+    </div>
+    <% } %>
 
+    <header class="institution-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+      <div class="institution-details">
+        <div class="badge-row">
+          <span class="badge badge--role">Campus</span>
+          <span class="badge badge--status">Painel de Inscrições</span>
+        </div>
+        <h1 class="institution-title" style="color: #ece42d;"><%= nomeCampus %></h1>
+        <p class="institution-meta">Selecione as modalidades desportivas em que o campus irá competir.</p>
+      </div>
+    </header>
+
+    <form action="/campus/inscricoes/salvar" method="POST">
+      
+      <div class="game-grid">
+        <% 
+          // Lista padrão estruturada com base nas modalidades do JIFC
+          const catalogoEsportes = [
+            'Atletismo', 'Basquete', 'Futsal Masculino', 'Futsal Feminino', 
+            'Handebol', 'Tênis de Mesa', 'Voleibol', 'Vôlei de Praia', 'Xadrez'
+          ];
+          
+          catalogoEsportes.forEach(function(esporte) { 
+            // Verifica se este campus já está inscrito nesta modalidade
+            const estaInscrito = modalidadesInscritas && modalidadesInscritas.includes(esporte);
+        %>
+          <label class="mini-card" style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+            <input type="checkbox" name="modalidades" value="<%= esporte %>" <%= estaInscrito ? 'checked' : '' %> style="width: 18px; height: 18px; accent-color: #ece42d;">
+            <span style="color: #ffffff; font-weight: 600;"><%= esporte %></span>
+          </label>
+        <% }); %>
+      </div>
+
+      <footer class="dashboard-footer" style="margin-top: 2.5rem; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+        <a class="btn btn-secondary" href="/perfil">Voltar ao Perfil</a>
+        <button type="submit" class="btn btn-primary primary-save-btn" style="border: none;">
+          Salvar Inscrições
+        </button>
+      </footer>
+
+    </form>
+
+  </article>
+</section>
