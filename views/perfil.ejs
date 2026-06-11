@@ -28,6 +28,16 @@
       </nav>
     <% } %>
 
+    <% if (usuarioLogado.tipo === 'juiz') { %>
+      <nav class="admin-actions-zone" aria-label="Painel do Juiz">
+        <h2>Atualização de Placar e Tabelas</h2>
+        <div class="profile-actions">
+          <a class="btn btn-primary" href="/juiz/tabelas">Painel do Juiz</a>
+          <a class="btn btn-secondary" href="/juiz/tabelas">Ver tabelas</a>
+        </div>
+      </nav>
+    <% } %>
+
     <% if (usuarioLogado.tipo === 'campus') { %>
       <section class="dashboard-section">
         

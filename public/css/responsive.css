@@ -1,3 +1,10 @@
+/* ==========================================================================
+   9. RESPONSIVIDADE PARA TELAS MENORES
+   - Ajusta o layout para tablets e celulares
+   - Reduz espaçamentos, empilha menus e adapta a largura dos campos
+   - Garante que o sistema continue legível em telas menores
+   ========================================================================== */
+
 @media (max-width: 768px) {
     .institution-header {
         flex-direction: column;

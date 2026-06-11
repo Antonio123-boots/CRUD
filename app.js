@@ -1,3 +1,4 @@
+// Arquivo principal que sobe o servidor Express e registra as rotas da aplicação.
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
@@ -9,11 +10,15 @@ const userRoutes   = require('./routes/userRoutes');   // O seu arquivo atual at
 const authRoutes    = require('./routes/authRoutes');   // Processamento de login/logout
 const campusRoutes  = require('./routes/campusRoutes'); // Painel do Campus
 const adminRoutes   = require('./routes/adminRoutes');  // Painel do Admin
+const juizRoutes    = require('./routes/juizRoutes');   // Painel do Juiz / Mesário
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Armazena sessões em memória para simular login e autenticação simples.
 global.sessions = new Map();
 
+// Lê um cookie do navegador para recuperar a sessão atual.
 function getCookie(req, name) {
     const cookies = req.headers.cookie ? req.headers.cookie.split(';') : [];
     const match = cookies.map((item) => item.trim()).find((item) => item.startsWith(name + '='));
@@ -34,6 +39,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 
+// Middleware que carrega a sessão do usuário a partir do cookie 'sid'.
 app.use((req, res, next) => {
     const sessionId = getCookie(req, 'sid');
     req.sessionId = sessionId || null;
@@ -44,6 +50,7 @@ app.use((req, res, next) => {
     next();
 });
 
+// Garante que a sessão seja registrada no cookie quando houver redirecionamento.
 app.use((req, res, next) => {
     const originalRedirect = res.redirect.bind(res);
     res.redirect = (url) => {
@@ -62,6 +69,7 @@ app.use('/', userRoutes);          // Caminhos públicos (ex: / , /login , /equi
 app.use('/auth', authRoutes);      // Caminhos de ação (ex: /auth/login)
 app.use('/campus', campusRoutes);  // Caminhos do Campus (ex: /campus/atletas)
 app.use('/admin', adminRoutes);    // Caminhos do Admin (ex: /admin/laudos)
+app.use('/juiz', juizRoutes);      // Caminhos do Juiz / Mesário (placar e tabelas)
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

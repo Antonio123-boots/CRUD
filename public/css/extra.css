@@ -1,3 +1,10 @@
+/* ==========================================================================
+   8. TABELAS, LISTAS E FORMULÁRIOS EXTRA
+   - Ajusta estilos auxiliares para tabelas de placar e listas de informações
+   - Define a aparência dos campos de formulário em telas internas
+   - Complementa a interface com componentes menores e específicos
+   ========================================================================== */
+
 .score-table {
     width: 100%;
     border-collapse: collapse;

@@ -1,3 +1,10 @@
+/* ==========================================================================
+   7. PERFIL E DASHBOARD DO USUÁRIO / ADMIN
+   - Cuida da área de perfil, cabeçalho da instituição e cartões do dashboard
+   - Define abas, listas de dados, status e ações administrativas
+   - Mantém a experiência visual organizada para tela de perfil e painel
+   ========================================================================== */
+
 .profile-shell {
     display: flex;
     justify-content: center;

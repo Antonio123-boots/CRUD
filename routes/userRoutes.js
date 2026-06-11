@@ -88,7 +88,7 @@ router.get('/login', function(req, res, next) {
 });
 
 /* GET profile page */
-router.get('/perfil', function(req, res, next) {
+router.get('/perfil', async function(req, res, next) {
     if (!req.session || !req.session.usuario) {
         return res.redirect('/login');
     }
@@ -114,7 +114,8 @@ router.get('/perfil', function(req, res, next) {
 
     const campusNome = req.session.usuario.nome || 'IFC Blumenau';
     const atletasCampus = campusModel.getAtletas(campusNome);
-    const jogosCampus = adminModel.getJogos().filter((jogo) =>
+    const jogos = await adminModel.getJogos();
+    const jogosCampus = jogos.filter((jogo) =>
         jogo.casa === campusNome || jogo.fora === campusNome
     );
 

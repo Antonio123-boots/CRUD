@@ -1,5 +1,8 @@
 /* ==========================================================================
-   6. COMPONENTES E UTILITÁRIOS
+   6. COMPONENTES GERAIS: LOGIN, PERFIL, CARDS E BOTÕES
+   - Estiliza os blocos principais usados em várias telas
+   - Define aparência de caixas, cards, badges, formulários e botões
+   - Reúne os elementos reutilizáveis do sistema visual do projeto
    ========================================================================== */
 .login-shell,
 .profile-shell {

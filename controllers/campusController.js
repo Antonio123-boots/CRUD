@@ -1,6 +1,7 @@
 const campusModel = require('../models/campusModel');
 const adminModel = require('../models/adminModel');
 
+// Exibe as modalidades já inscritas pelo campus logado.
 function renderInscricoes(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   res.render('campus/inscrições', {
@@ -12,12 +13,14 @@ function renderInscricoes(req, res) {
   });
 }
 
+// Salva as modalidades escolhidas no painel do campus.
 function salvarInscricoes(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   campusModel.salvarInscricoes(nomeCampus, req.body.modalidades || []);
   res.redirect('/campus/inscricoes');
 }
 
+// Mostra a lista de atletas do campus para cadastro ou substituição.
 function renderAtletas(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   res.render('campus/atletas', {
@@ -30,6 +33,7 @@ function renderAtletas(req, res) {
   });
 }
 
+// Cadastra um atleta com status regular.
 function cadastrarAtleta(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   campusModel.cadastrarAtleta(nomeCampus, {
@@ -42,6 +46,7 @@ function cadastrarAtleta(req, res) {
   res.redirect('/campus/atletas');
 }
 
+// Registra uma substituição com status pendente de laudo.
 function substituirAtleta(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   campusModel.substituirAtleta(nomeCampus, {
@@ -53,9 +58,11 @@ function substituirAtleta(req, res) {
   res.redirect('/campus/atletas');
 }
 
-function renderJogos(req, res) {
+// Lista os jogos relacionados ao campus autenticado.
+async function renderJogos(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
-  const jogosCampus = adminModel.getJogos().filter((jogo) =>
+  const jogos = await adminModel.getJogos();
+  const jogosCampus = jogos.filter((jogo) =>
     jogo.casa === nomeCampus || jogo.fora === nomeCampus
   );
 

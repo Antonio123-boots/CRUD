@@ -2,16 +2,16 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 
+// Rotas administrativas: configuração, análise e placar
 router.get('/configurar', adminController.renderConfigurar);
 router.post('/configurar/salvar', adminController.salvarConfiguracoes);
-
-router.get('/chaveamento', adminController.renderChaveamento);
-router.post('/chaveamento/gerar/:modalidadeId', adminController.gerarChaveamento);
 
 router.get('/laudos', adminController.renderAnalise);
 router.post('/laudos/validar/:atletaId', adminController.validarAtleta);
 
-router.get('/jogos/placar/:jogoId', adminController.renderPlacar);
-router.post('/jogos/placar/:jogoId/salvar', adminController.salvarPlacar);
+// Rotas de Chaveamento Dinâmico integradas ao Banco de Dados
+router.get('/chaveamento', adminController.renderChaveamento);
+router.post('/chaveamento/gerar', adminController.gerarChaveamento);
+router.post('/chaveamento/limpar', adminController.limparChaveamento);
 
 module.exports = router;

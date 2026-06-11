@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "Sistema de cadastro de usuários.",
   "main": "app.js",
+
+  "name": "seu-projeto",
+  "version": "1.0.0",
   "scripts": {
-  "start": "node app.js",
-  "dev": "nodemon app.js"
+    "dev": "nodemon app.js"
   },
+  
   "keywords": [],
   "author": "",
   "license": "ISC",

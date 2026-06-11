@@ -1,21 +1,34 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Força o dotenv a buscar o arquivo .env explicitamente na raiz do projeto
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+// Tratamento rigoroso de strings vazias ou nulas vindas do ambiente
+let dbPassword = process.env.DB_PASSWORD;
+if (dbPassword === '""' || dbPassword === "''" || !dbPassword) {
+    dbPassword = '';
+}
+
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || '127.0.0.1',
+    user: process.env.DB_USER || 'root',
+    password: dbPassword,
+    database: process.env.DB_NAME || 'jifc',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-        return;
-    }
-    console.log('Connected to the MySQL database.');
-});
+// Autoteste de conexão ao iniciar o servidor
+pool.getConnection()
+    .then(conn => {
+        console.log('✅ Connected successfully to the MySQL database.');
+        conn.release();
+    })
+    .catch(err => {
+        console.error('❌ Database connection failure:', err.message);
+    });
 
-module.exports = connection;
+module.exports = pool;

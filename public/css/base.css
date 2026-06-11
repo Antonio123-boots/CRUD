@@ -1,5 +1,8 @@
 /* ==========================================================================
    1. RESET E CONFIGURAÇÕES GLOBAIS
+   - Remove margens/paddings padrão do navegador
+   - Define a fonte base, a cor de fundo escura e a altura mínima da página
+   - Serve como base visual para toda a interface
    ========================================================================== */
 * {
     margin: 0;
@@ -15,7 +18,10 @@ body {
 }
 
 /* ==========================================================================
-   2. MENU 1 - SUPERIOR (LOGO + BOTÕES + PESQUISA + PERFIL)
+   2. MENU SUPERIOR (HEADER PRINCIPAL)
+   - Estiliza a barra fixa no topo da página
+   - Controla logo, navegação principal, campo de busca e avatar do usuário
+   - Usa gradiente escuro, sombra e layout em linha para manter o menu organizado
    ========================================================================== */
 .menu-superior {
     background: linear-gradient(135deg, #1d1e3e 0%, #1a1b3d 100%);
@@ -158,7 +164,10 @@ body {
 }
 
 /* ==========================================================================
-   3. MENU 2 - MODALIDADES (MENOR, HORIZONTAL)
+   3. MENU DE MODALIDADES (BARRA HORIZONTAL DE ESPORTES)
+   - Exibe os esportes como botões curtos e alinhados em linha
+   - Permite rolagem horizontal quando há muitos itens
+   - Destaque visual para a modalidade ativa com fundo amarelo/escuro
    ========================================================================== */
 .menu-modalidades {
     background: rgba(236, 228, 45, 0.08);
@@ -234,7 +243,10 @@ body {
 }
 
 /* ==========================================================================
-   4. MENU 3 - DIAS (PEQUENO, TIPO PAGINAÇÃO/ABAS)
+   4. MENU DE DIAS (FILTRO POR DATA)
+   - Mostra os dias do evento como botões pequenos em formato de abas
+   - Centraliza os filtros e permite alternar entre datas rapidamente
+   - O hover deixa o item mais destacado visualmente
    ========================================================================== */
 .menu-dias {
     background: transparent;
@@ -281,7 +293,10 @@ body {
 }
 
 /* ==========================================================================
-   5. ÁREA DE CONTEÚDO PRINCIPAL EXTERNA (E LOGIN)
+   5. CONTEÚDO PRINCIPAL E BOAS-VINDAS
+   - Define a largura máxima do conteúdo central da página
+   - Estiliza o card de apresentação inicial e o botão de login
+   - Mantém o layout principal consistente em telas maiores
    ========================================================================== */
 .main-content {
     max-width: 1400px;

@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 
+// Usuários fictícios usados para simular autenticação no sistema.
 const usuariosPermitidos = {
     'admin@ifc.edu.br': {
         senha: 'admin123',
@@ -16,10 +17,17 @@ const usuariosPermitidos = {
         nome: 'Instituição Participante',
         email: 'instituicao@ifc.edu.br',
         perfil: 'Instituição'
+    },
+    'juiz@ifc.edu.br': {
+        senha: 'juiz123',
+        tipo: 'juiz',
+        nome: 'Juiz / Mesário',
+        email: 'juiz@ifc.edu.br',
+        perfil: 'Juiz'
     }
 };
 
-/* POST /auth/login - Processa o formulário de login */
+// POST /auth/login: valida e cria a sessão do usuário.
 router.post('/login', function(req, res, next) {
     const { email, senha } = req.body;
     const usuario = usuariosPermitidos[email?.trim().toLowerCase()];
@@ -50,7 +58,7 @@ router.post('/login', function(req, res, next) {
     res.redirect('/perfil');
 });
 
-/* GET /auth/logout - Destrói a sessão */
+// GET /auth/logout: encerra a sessão e apaga o cookie.
 router.get('/logout', function(req, res, next) {
     if (req.sessionId) {
         global.sessions.delete(req.sessionId);

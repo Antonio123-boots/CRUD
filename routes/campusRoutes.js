@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const campusController = require('../controllers/campusController');
 
+// Rotas do painel do campus: inscrições, atletas e jogos.
 router.get('/inscricoes', campusController.renderInscricoes);
 router.post('/inscricoes/salvar', campusController.salvarInscricoes);
 
