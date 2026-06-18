@@ -1,12 +1,29 @@
 <section class="profile-shell">
   <article class="profile-card profile-card--wide">
-    
-    <% if (typeof prazoAberto !== 'undefined' && !prazoAberto) { %>
+    <% 
+      const catalogoEsportes = [
+        'Atletismo',
+        'Basquete',
+        'Futsal',
+        'Handebol',
+        'Tênis de Mesa',
+        'Voleibol',
+        'Vôlei de Praia',
+        'Xadrez'
+      ];
+      const modalidadesSalvas = Array.isArray(modalidadesInscritas) ? modalidadesInscritas : [];
+      const atletasSalvos = Array.isArray(atletas) ? atletas : [];
+      const mostrarModalidades = typeof prazoModalidadesAberto !== 'undefined' && prazoModalidadesAberto;
+      const mostrarAtletas = typeof prazoAtletasAberto !== 'undefined' && prazoAtletasAberto;
+      const totalAbas = (mostrarModalidades ? 1 : 0) + (mostrarAtletas ? 1 : 0);
+    %>
+
+    <% if (!mostrarModalidades && !mostrarAtletas) { %>
     <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; font-weight: bold; text-align: center; width: 100%;">
-        ⚠ Período de inscrições ENCERRADO ou não iniciado para esta etapa!
+        ⚠ Fora do período de cadastro.
         <br>
         <small style="font-weight: normal; color: rgba(255,255,255,0.6);">
-        Prazo: <%= prazos.inicio ? prazos.inicio : 'Não definido' %> até <%= prazos.fim ? prazos.fim : 'Não definido' %>
+        Nenhuma etapa está disponível no período cadastrado globalmente.
         </small>
     </div>
     <% } %>
@@ -18,39 +35,170 @@
           <span class="badge badge--status">Painel de Inscrições</span>
         </div>
         <h1 class="institution-title" style="color: #ece42d;"><%= nomeCampus %></h1>
-        <p class="institution-meta">Selecione as modalidades desportivas em que o campus irá competir.</p>
+        <p class="institution-meta">Selecione as modalidades por gênero e cadastre os atletas do campus no mesmo painel.</p>
       </div>
     </header>
 
-    <form action="/campus/inscricoes/salvar" method="POST">
-      
-      <div class="game-grid">
-        <% 
-          // Lista padrão estruturada com base nas modalidades do JIFC
-          const catalogoEsportes = [
-            'Atletismo', 'Basquete', 'Futsal Masculino', 'Futsal Feminino', 
-            'Handebol', 'Tênis de Mesa', 'Voleibol', 'Vôlei de Praia', 'Xadrez'
-          ];
-          
-          catalogoEsportes.forEach(function(esporte) { 
-            // Verifica se este campus já está inscrito nesta modalidade
-            const estaInscrito = modalidadesInscritas && modalidadesInscritas.includes(esporte);
-        %>
-          <label class="mini-card" style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-            <input type="checkbox" name="modalidades" value="<%= esporte %>" <%= estaInscrito ? 'checked' : '' %> style="width: 18px; height: 18px; accent-color: #ece42d;">
-            <span style="color: #ffffff; font-weight: 600;"><%= esporte %></span>
-          </label>
-        <% }); %>
+    <% if (mostrarModalidades || mostrarAtletas) { %>
+      <div class="dashboard-tabs" role="tablist" style="grid-template-columns: repeat(<%= totalAbas %>, minmax(0, 1fr));">
+        <% if (mostrarModalidades) { %>
+          <button type="button" class="tab-trigger is-active" data-target="modalidades">Modalidades</button>
+        <% } %>
+        <% if (mostrarAtletas) { %>
+          <button type="button" class="tab-trigger <%= mostrarModalidades ? '' : 'is-active' %>" data-target="atletas">Atletas</button>
+        <% } %>
       </div>
 
-      <footer class="dashboard-footer" style="margin-top: 2.5rem; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
-        <a class="btn btn-secondary" href="/perfil">Voltar ao Perfil</a>
-        <button type="submit" class="btn btn-primary primary-save-btn" style="border: none;">
-          Salvar Inscrições
-        </button>
-      </footer>
+      <% if (mostrarModalidades) { %>
+      <div class="dashboard-view <%= mostrarModalidades ? 'is-active' : '' %>" id="modalidades">
+        <section style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.12); margin-bottom: 2rem;">
+          <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;">Inscrição por Modalidade</h3>
+          <p style="margin: 0 0 1.25rem; color: rgba(255,255,255,0.68);">Marque masculino, feminino ou ambos para cada esporte disponível.</p>
 
-    </form>
+          <form action="/campus/inscricoes/salvar" method="POST">
+            <div class="game-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+              <% catalogoEsportes.forEach(function(esporte) { 
+                  const masculino = `${esporte} Masculino`;
+                  const feminino = `${esporte} Feminino`;
+                  const selecionadoMasculino = modalidadesSalvas.includes(masculino);
+                  const selecionadoFeminino = modalidadesSalvas.includes(feminino);
+              %>
+                <div class="mini-card" style="display: flex; flex-direction: column; gap: 0.9rem; padding: 1rem 1.1rem;">
+                  <strong style="color: #ffffff; font-size: 1rem;"><%= esporte %></strong>
+                  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer; color: rgba(255,255,255,0.85); font-weight: 600;">
+                      <input type="checkbox" name="modalidades" value="<%= masculino %>" <%= selecionadoMasculino ? 'checked' : '' %> style="width: 18px; height: 18px; accent-color: #ece42d;">
+                      Masculino
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer; color: rgba(255,255,255,0.85); font-weight: 600;">
+                      <input type="checkbox" name="modalidades" value="<%= feminino %>" <%= selecionadoFeminino ? 'checked' : '' %> style="width: 18px; height: 18px; accent-color: #ece42d;">
+                      Feminino
+                    </label>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+
+            <footer class="dashboard-footer" style="margin-top: 2.5rem; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+              <a class="btn btn-secondary" href="/perfil">Voltar ao Perfil</a>
+              <button type="submit" class="btn btn-primary primary-save-btn" style="border: none;">
+                Salvar Inscrições
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+      <% } %>
+
+      <% if (mostrarAtletas) { %>
+      <div class="dashboard-view" id="atletas">
+        <section style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.12); margin-bottom: 2rem;">
+          <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.1rem;">Cadastro de Atletas do Campus</h3>
+          <p style="margin: 0 0 1.25rem; color: rgba(255,255,255,0.68);">Preencha os dados do atleta para enviá-lo para a inscrição regular.</p>
+
+          <form action="/campus/atletas/cadastrar" method="POST" class="form-grid" style="align-items: flex-end; margin-bottom: 1.5rem;">
+            <label>
+              Nome do Atleta
+              <input type="text" name="nome" placeholder="Ex: Gabriel Silva" required class="premium-text-input">
+            </label>
+
+            <label>
+              Matrícula
+              <input type="text" name="matricula" placeholder="Ex: 20261102" required class="premium-text-input">
+            </label>
+
+            <label>
+              Gênero
+              <select name="genero" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Misto">Misto</option>
+              </select>
+            </label>
+
+            <label>
+              Modalidade
+              <select name="modalidade" required class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+                <% if (modalidadesSalvas.length > 0) { %>
+                  <% modalidadesSalvas.forEach(function(modalidade) { %>
+                    <option value="<%= modalidade %>"><%= modalidade %></option>
+                  <% }); %>
+                <% } else { %>
+                  <option value="" disabled selected>Salve as inscrições para liberar as modalidades</option>
+                <% } %>
+              </select>
+            </label>
+
+            <label>
+              Data de Nascimento
+              <input type="date" name="dataNascimento" class="premium-text-input">
+            </label>
+
+            <button type="submit" class="btn btn-primary primary-save-btn" style="border: none; height: 43px; align-self: end;">
+              Adicionar Atleta
+            </button>
+          </form>
+
+          <div style="overflow-x: auto;">
+            <table class="score-table">
+              <thead>
+                <tr style="color: #ece42d; border-bottom: 2px solid rgba(255,255,255,0.1);">
+                  <th style="padding: 0.75rem 0.5rem;">Nome</th>
+                  <th>Matrícula</th>
+                  <th>Modalidade</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (atletasSalvos.length > 0) { %>
+                  <% atletasSalvos.forEach(function(atleta) { %>
+                    <tr>
+                      <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
+                      <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
+                      <td><span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= atleta.modalidade %></span></td>
+                      <td>
+                        <% if (atleta.status === 'Regular') { %>
+                          <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
+                        <% } else { %>
+                          <span style="color: #ffb700; font-weight: bold;">⚠ Pendente</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="4" class="feedback-empty">
+                      Nenhum atleta inscrito até o momento.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <% } %>
+
+      <% if (totalAbas > 1) { %>
+      <script>
+        document.querySelectorAll('.tab-trigger').forEach((button) => {
+          button.addEventListener('click', () => {
+            const targetId = button.dataset.target;
+
+            document.querySelectorAll('.tab-trigger').forEach((item) => item.classList.toggle('is-active', item === button));
+            document.querySelectorAll('.dashboard-view').forEach((view) => view.classList.toggle('is-active', view.id === targetId));
+          });
+        });
+      </script>
+      <% } %>
+    <% } else { %>
+      <section style="min-height: 40vh; display: flex; align-items: center; justify-content: center; text-align: center; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.12); color: rgba(255,255,255,0.8);">
+        <div>
+          <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.2rem;">Fora do período de cadastro</h3>
+          <p style="margin: 0;">Nenhuma aba está disponível no período cadastrado globalmente.</p>
+        </div>
+      </section>
+    <% } %>
 
   </article>
 </section>

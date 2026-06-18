@@ -12,18 +12,25 @@ function renderInscricoes(req, res) {
   const config = adminModel.getConfiguracoes();
   const hoje = obterDataAtual();
 
-  const inicio = config.inicio_inscricao_modalidades;
-  const fim = config.fim_inscricao_modalidades;
-  const prazoAberto = inicio && fim && (hoje >= inicio && hoje <= fim);
+  const inicioModalidades = config.inicio_inscricao_modalidades;
+  const fimModalidades = config.fim_inscricao_modalidades;
+  const prazoModalidadesAberto = inicioModalidades && fimModalidades && (hoje >= inicioModalidades && hoje <= fimModalidades);
+
+  const inicioAtletas = config.inicio_inscricao_atletas;
+  const fimAtletas = config.fim_inscricao_atletas;
+  const prazoAtletasAberto = inicioAtletas && fimAtletas && (hoje >= inicioAtletas && hoje <= fimAtletas);
 
   res.render('campus/inscrições', {
-    title: 'Inscrição de Modalidades',
+    title: 'Painel de Inscrições',
     usuarioLogado: req.session?.usuario || null,
     mostrarFiltros: false,
     modalidadesInscritas: campusModel.getInscricoes(nomeCampus),
+    atletas: campusModel.getAtletas(nomeCampus),
     nomeCampus,
-    prazoAberto: prazoAberto,
-    prazos: { inicio, fim }
+    prazoModalidadesAberto,
+    prazoAtletasAberto,
+    prazosModalidades: { inicio: inicioModalidades, fim: fimModalidades },
+    prazosAtletas: { inicio: inicioAtletas, fim: fimAtletas }
   });
 }
 

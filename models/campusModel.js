@@ -1,6 +1,6 @@
 // Base de dados local em memória para modalidades e atletas dos campus.
 const inscricoesCampus = {
-  'IFC Blumenau': ['Futsal Masculino', 'Vôlei Masculino'],
+  'IFC Blumenau': ['Futsal Masculino', 'Voleibol Masculino'],
   'IFC Camboriú': ['Basquete Masculino'],
   'IFC Brusque': ['Futsal Masculino']
 };
