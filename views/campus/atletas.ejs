@@ -11,6 +11,24 @@
 <% } %>
 
   <article class="profile-card profile-card--wide">
+    <% 
+      const modalidadesDisponiveis = Array.isArray(modalidadesInscritas) && modalidadesInscritas.length > 0
+        ? modalidadesInscritas
+        : [
+            'Atletismo Masculino', 'Atletismo Feminino',
+            'Basquete Masculino', 'Basquete Feminino',
+            'Futsal Masculino', 'Futsal Feminino',
+            'Handebol Masculino', 'Handebol Feminino',
+            'Tênis de Mesa Masculino', 'Tênis de Mesa Feminino',
+            'Voleibol Masculino', 'Voleibol Feminino',
+            'Vôlei de Praia Masculino', 'Vôlei de Praia Feminino',
+            'Xadrez Masculino', 'Xadrez Feminino'
+          ];
+      const atletaEmEdicaoLocal = typeof atletaEmEdicao !== 'undefined' ? atletaEmEdicao : null;
+      const isEditando = !!(atletaEmEdicaoLocal && atletaEmEdicaoLocal.id);
+      const rotaFormulario = isEditando ? `/campus/atletas/atualizar/${atletaEmEdicaoLocal.id}` : '/campus/atletas/cadastrar';
+      const textoBotao = isEditando ? 'Salvar alterações' : '+ Adicionar';
+    %>
     
     <header class="institution-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
       <div class="institution-details">
@@ -23,53 +41,57 @@
       </div>
     </header>
 
+    <% if (typeof mensagemErro !== 'undefined' && mensagemErro) { %>
+      <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600;">
+        <%= mensagemErro %>
+      </div>
+    <% } %>
+
+    <% if (typeof mensagemSucesso !== 'undefined' && mensagemSucesso) { %>
+      <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; color: #00ff88; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600;">
+        <%= mensagemSucesso %>
+      </div>
+    <% } %>
+
     <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.15); margin-bottom: 2.5rem;">
-      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;">Inscrever Novo Competidor</h3>
+      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;"><%= isEditando ? 'Editar Competidor' : 'Inscrever Novo Competidor' %></h3>
       
-      <form action="/campus/atletas/cadastrar" method="POST" class="form-grid" style="align-items: flex-end;">
+      <form action="<%= rotaFormulario %>" method="POST" class="form-grid" style="align-items: flex-end;">
         <label>
           Nome do Atleta
-          <input type="text" name="nome" placeholder="Ex: Gabriel Silva" required class="premium-text-input">
+          <input type="text" name="nome" placeholder="Ex: Gabriel Silva" required class="premium-text-input" value="<%= isEditando ? atletaEmEdicaoLocal.nome : '' %>">
         </label>
 
         <label>
           Matrícula Académica
-          <input type="text" name="matricula" placeholder="Ex: 20261102" required class="premium-text-input">
+          <input type="text" name="matricula" placeholder="Ex: 20261102" required class="premium-text-input" value="<%= isEditando ? atletaEmEdicaoLocal.matricula : '' %>">
         </label>
 
         <label>
           Gênero
           <select name="genero" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-            <option value="Masculino">Masculino</option>
-            <option value="Feminino">Feminino</option>
-            <option value="Misto">Misto</option>
+            <option value="Masculino" <%= isEditando && atletaEmEdicaoLocal.genero === 'Masculino' ? 'selected' : '' %>>Masculino</option>
+            <option value="Feminino" <%= isEditando && atletaEmEdicaoLocal.genero === 'Feminino' ? 'selected' : '' %>>Feminino</option>
+            <option value="Misto" <%= isEditando && atletaEmEdicaoLocal.genero === 'Misto' ? 'selected' : '' %>>Misto</option>
           </select>
         </label>
 
         <label>
           Modalidade
           <select name="modalidade" required class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-            <option value="Atletismo Masculino">Atletismo Masculino</option>
-            <option value="Atletismo Feminino">Atletismo Feminino</option>
-            <option value="Basquete Masculino">Basquete Masculino</option>
-            <option value="Basquete Feminino">Basquete Feminino</option>
-            <option value="Futsal Masculino">Futsal Masculino</option>
-            <option value="Futsal Feminino">Futsal Feminino</option>
-            <option value="Handebol Masculino">Handebol Masculino</option>
-            <option value="Handebol Feminino">Handebol Feminino</option>
-            <option value="Tênis de Mesa Masculino">Tênis de Mesa Masculino</option>
-            <option value="Tênis de Mesa Feminino">Tênis de Mesa Feminino</option>
-            <option value="Voleibol Masculino">Voleibol Masculino</option>
-            <option value="Voleibol Feminino">Voleibol Feminino</option>
-            <option value="Vôlei de Praia Masculino">Vôlei de Praia Masculino</option>
-            <option value="Vôlei de Praia Feminino">Vôlei de Praia Feminino</option>
-            <option value="Xadrez Masculino">Xadrez Masculino</option>
-            <option value="Xadrez Feminino">Xadrez Feminino</option>
+            <% modalidadesDisponiveis.forEach(function(modalidade) { %>
+              <option value="<%= modalidade %>" <%= isEditando && atletaEmEdicaoLocal.modalidade === modalidade ? 'selected' : '' %>><%= modalidade %></option>
+            <% }); %>
           </select>
         </label>
 
+        <label>
+          Data de Nascimento
+          <input type="date" name="dataNascimento" class="premium-text-input" value="<%= isEditando && atletaEmEdicaoLocal.dataNascimento ? atletaEmEdicaoLocal.dataNascimento : '' %>">
+        </label>
+
         <button type="submit" class="btn btn-primary premium-action-btn addition-btn" style="height: 43px; font-weight: 700;">
-          + Adicionar
+          <%= textoBotao %>
         </button>
       </form>
     </div>
@@ -83,8 +105,10 @@
             <tr style="color: #ece42d; border-bottom: 2px solid rgba(255,255,255,0.1);">
               <th style="padding: 0.75rem 0.5rem;">Nome Completo</th>
               <th>Matrícula</th>
+              <th>Data Nasc.</th>
               <th>Modalidade</th>
               <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -93,25 +117,40 @@
                 <tr>
                   <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
                   <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
+                  <td style="color: rgba(255,255,255,0.7);"><%= atleta.dataNascimento || '-' %></td>
                   <td><span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= atleta.modalidade %></span></td>
                   <td>
                     <% if (atleta.status === 'Regular') { %>
                       <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
+                    <% } else if (atleta.status === 'Pendente_Laudo') { %>
+                      <span style="color: #ffb700; font-weight: bold;">⚠ Pendente de laudo</span>
                     <% } else { %>
-                      <span style="color: #ffb700; font-weight: bold;">⚠ Pendente</span>
+                      <span style="color: #ff4d4d; font-weight: bold;">⚠ Irregular</span>
                     <% } %>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                      <a class="btn btn-secondary" href="/campus/atletas/editar/<%= atleta.id %>" style="padding: 0.55rem 0.9rem; text-decoration: none;">Editar</a>
+                      <form action="/campus/atletas/excluir/<%= atleta.id %>" method="POST" onsubmit="return confirm('Deseja excluir este atleta?');">
+                        <button type="submit" class="btn btn-primary" style="padding: 0.55rem 0.9rem; border: none; background: #ff4d4d; color: white;">Excluir</button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               <% }); %>
             <% } else { %>
               <tr>
-                <td colspan="4" class="feedback-empty">
+                <td colspan="6" class="feedback-empty">
                   Nenhum atleta inscrito até o momento.
                 </td>
               </tr>
             <% } %>
           </tbody>
         </table>
+      </div>
+
+      <div style="margin-top: 1rem; display: flex; justify-content: flex-end; color: rgba(255,255,255,0.8); font-weight: 600;">
+        Total de atletas regulares: <span style="color: #00ff88; margin-left: 0.35rem;"><%= typeof quantidadeRegulares !== 'undefined' ? quantidadeRegulares : 0 %></span>
       </div>
     </div>
 

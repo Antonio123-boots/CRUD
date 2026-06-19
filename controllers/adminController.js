@@ -120,13 +120,28 @@ function renderAnalise(req, res) {
     title: 'Análise de Atletas',
     usuarioLogado: req.session?.usuario || null,
     mostrarFiltros: false,
-    atletas: adminModel.getAtletasPendentes()
+    campi,
+    campusSelecionado,
+    atletas
   });
 }
 
 function validarAtleta(req, res) {
-  adminModel.validarAtleta(req.params.atletaId);
-  res.redirect('/admin/laudos');
+  const atleta = campusModel.atualizarStatusAtleta(req.params.atletaId, 'Regular');
+  if (!atleta) {
+    return res.redirect('/admin/laudos?erro=' + encodeURIComponent('Atleta não encontrado para validação.'));
+  }
+
+  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta validado com sucesso.'));
+}
+
+function marcarIrregular(req, res) {
+  const atleta = campusModel.atualizarStatusAtleta(req.params.atletaId, 'Irregular');
+  if (!atleta) {
+    return res.redirect('/admin/laudos?erro=' + encodeURIComponent('Atleta não encontrado para reprovação.'));
+  }
+
+  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta marcado como irregular.'));
 }
 
 async function renderPlacar(req, res) {
@@ -165,6 +180,7 @@ module.exports = {
   limparChaveamento,
   renderAnalise,
   validarAtleta,
+  marcarIrregular,
   renderPlacar,
   salvarPlacar
 };

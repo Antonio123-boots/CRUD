@@ -29,6 +29,7 @@ function renderInscricoes(req, res) {
     nomeCampus,
     prazoModalidadesAberto,
     prazoAtletasAberto,
+    quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
     prazosModalidades: { inicio: inicioModalidades, fim: fimModalidades },
     prazosAtletas: { inicio: inicioAtletas, fim: fimAtletas }
   });
@@ -60,16 +61,24 @@ function renderAtletas(req, res) {
   const inicio = config.inicio_inscricao_atletas;
   const fim = config.fim_inscricao_atletas;
   const prazoAberto = inicio && fim && (hoje >= inicio && hoje <= fim);
+  const atletaEmEdicao = req.query.editar ? campusModel.getAtletaPorId(req.query.editar) : null;
+  const modalidadesInscritas = campusModel.getInscricoes(nomeCampus);
+  const atletas = campusModel.getAtletas(nomeCampus);
 
   res.render('campus/atletas', {
     title: 'Gerenciar Atletas',
     usuarioLogado: req.session?.usuario || null,
     mostrarFiltros: false,
     faseAtual: 'regular',
-    atletas: campusModel.getAtletas(nomeCampus),
+    atletas,
+    modalidadesInscritas,
+    atletaEmEdicao,
     nomeCampus,
     prazoAberto: prazoAberto,
-    prazos: { inicio, fim }
+    prazos: { inicio, fim },
+    quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
+    mensagemErro: req.query.erro || '',
+    mensagemSucesso: req.query.sucesso || ''
   });
 }
 
@@ -86,14 +95,88 @@ function cadastrarAtleta(req, res) {
   }
 
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
-  campusModel.cadastrarAtleta(nomeCampus, {
-    nome: req.body.nome,
-    matricula: req.body.matricula,
-    modalidade: req.body.modalidade || 'Futsal Masculino',
-    genero: req.body.genero || 'Masculino',
-    dataNascimento: req.body.dataNascimento
+  try {
+    campusModel.cadastrarAtleta(nomeCampus, {
+      nome: req.body.nome,
+      matricula: req.body.matricula,
+      modalidade: req.body.modalidade || 'Futsal Masculino',
+      genero: req.body.genero || 'Masculino',
+      dataNascimento: req.body.dataNascimento
+    });
+    res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta cadastrado com sucesso.'));
+  } catch (error) {
+    const mensagem = error.code === 'MATRICULA_DUPLICADA'
+      ? error.message
+      : 'Não foi possível cadastrar o atleta.';
+    res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
+  }
+}
+
+function editarAtleta(req, res) {
+  const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
+  const atleta = campusModel.getAtletaPorId(req.params.id);
+
+  if (!atleta || atleta.campus !== nomeCampus) {
+    return res.redirect('/campus/atletas?erro=' + encodeURIComponent('Atleta não encontrado para edição.'));
+  }
+
+  const config = adminModel.getConfiguracoes();
+  const hoje = obterDataAtual();
+  const inicio = config.inicio_inscricao_atletas;
+  const fim = config.fim_inscricao_atletas;
+  const prazoAberto = inicio && fim && (hoje >= inicio && hoje <= fim);
+
+  return res.render('campus/atletas', {
+    title: 'Gerenciar Atletas',
+    usuarioLogado: req.session?.usuario || null,
+    mostrarFiltros: false,
+    faseAtual: 'regular',
+    atletas: campusModel.getAtletas(nomeCampus),
+    modalidadesInscritas: campusModel.getInscricoes(nomeCampus),
+    atletaEmEdicao: atleta,
+    nomeCampus,
+    prazoAberto,
+    prazos: { inicio, fim },
+    quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
+    mensagemErro: req.query.erro || '',
+    mensagemSucesso: req.query.sucesso || ''
   });
-  res.redirect('/campus/atletas');
+}
+
+function atualizarAtleta(req, res) {
+  const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
+
+  try {
+    const atleta = campusModel.atualizarAtleta(req.params.id, nomeCampus, {
+      nome: req.body.nome,
+      matricula: req.body.matricula,
+      modalidade: req.body.modalidade || 'Futsal Masculino',
+      genero: req.body.genero || 'Masculino',
+      dataNascimento: req.body.dataNascimento
+    });
+
+    if (!atleta) {
+      return res.redirect('/campus/atletas?erro=' + encodeURIComponent('Atleta não encontrado para atualização.'));
+    }
+
+    res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta atualizado com sucesso.'));
+  } catch (error) {
+    const mensagem = error.code === 'MATRICULA_DUPLICADA'
+      ? error.message
+      : 'Não foi possível atualizar o atleta.';
+    res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
+  }
+}
+
+function excluirAtleta(req, res) {
+  const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
+  const removido = campusModel.excluirAtleta(req.params.id, nomeCampus);
+
+  if (!removido) {
+    return res.redirect('/campus/atletas?erro=' + encodeURIComponent('Atleta não encontrado para exclusão.'));
+  }
+
+  res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta excluído com sucesso.'));
 }
 
 // 5. Registra uma substituição com status pendente de laudo
@@ -144,6 +227,9 @@ module.exports = {
   salvarInscricoes,
   renderAtletas,
   cadastrarAtleta,
+  editarAtleta,
+  atualizarAtleta,
+  excluirAtleta,
   substituirAtleta,
   renderJogos
 };
