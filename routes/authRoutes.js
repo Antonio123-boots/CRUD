@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
+const { listarCampi, listarCredenciaisCampus, senhaPadraoCampus } = require('../models/campiCatalog');
 
 // Usuários fictícios usados para simular autenticação no sistema.
 const usuariosPermitidos = {
@@ -27,6 +28,20 @@ const usuariosPermitidos = {
     }
 };
 
+listarCampi().forEach((campus) => {
+    usuariosPermitidos[campus.email] = {
+        senha: senhaPadraoCampus,
+        tipo: 'campus',
+        nome: campus.nome,
+        email: campus.email,
+        perfil: 'Campus',
+        campusSlug: campus.slug,
+        nomeExibicao: campus.nomeExibicao,
+        logoTexto: campus.logoTexto,
+        cor: campus.cor
+    };
+});
+
 // POST /auth/login: valida e cria a sessão do usuário.
 router.post('/login', function(req, res, next) {
     const { email, senha } = req.body;
@@ -37,7 +52,9 @@ router.post('/login', function(req, res, next) {
             title: 'JIFC - Login',
             usuarioLogado: null,
             mostrarFiltros: false,
-            erro: 'E-mail ou senha inválidos.'
+            erro: 'E-mail ou senha inválidos.',
+            credenciaisCampus: listarCredenciaisCampus(),
+            senhaPadraoCampus
         });
     }
 
@@ -49,7 +66,11 @@ router.post('/login', function(req, res, next) {
             nome: usuario.nome,
             email: usuario.email,
             tipo: usuario.tipo,
-            perfil: usuario.perfil
+            perfil: usuario.perfil,
+            campusSlug: usuario.campusSlug || null,
+            nomeExibicao: usuario.nomeExibicao || null,
+            logoTexto: usuario.logoTexto || null,
+            cor: usuario.cor || null
         }
     };
 

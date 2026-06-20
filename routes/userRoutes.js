@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminModel = require('../models/adminModel');
 const campusModel = require('../models/campusModel');
+const { listarCampi, obterCampusPorSlug, listarCredenciaisCampus, senhaPadraoCampus } = require('../models/campiCatalog');
 
 const IFCS = [
     'IFC Araquari', 'IFC Blumenau', 'IFC Brusque', 'IFC Camboriú', 'IFC Concórdia',
@@ -83,7 +84,9 @@ router.get('/login', function(req, res, next) {
         title: 'JIFC - Login',
         usuarioLogado: null,
         mostrarFiltros: false,
-        erro: null
+        erro: null,
+        credenciaisCampus: listarCredenciaisCampus(),
+        senhaPadraoCampus
     });
 });
 
@@ -114,6 +117,7 @@ router.get('/perfil', async function(req, res, next) {
 
     const campusNome = req.session.usuario.nome || 'IFC Blumenau';
     const atletasCampus = campusModel.getAtletas(campusNome);
+    const modalidadesCampus = campusModel.getInscricoes(campusNome);
     const jogos = await adminModel.getJogos();
     const jogosCampus = jogos.filter((jogo) =>
         jogo.casa === campusNome || jogo.fora === campusNome
@@ -131,8 +135,9 @@ router.get('/perfil', async function(req, res, next) {
         textoAtletas,
         mostrarAcoesInscricao,
         atletasCampus,
+        modalidadesCampus,
         jogosCampus,
-        anoJifc: configuracoes?.ano_evento || 2026 // ◄ ADICIONE APENAS ESTA LINHA        
+        anoJifc: configuracoes?.ano_evento || 2026
     });
 });
 
@@ -156,11 +161,44 @@ router.get('/chaveamento', function(req, res, next) {
 
 /* GET equipes page */
 router.get('/equipes', function(req, res, next) {
-    // No futuro: carregar a lista de campus cadastrados
     res.render('equipes', { 
         title: 'Equipes',
         usuarioLogado: req.session?.usuario || null,
-        mostrarFiltros: false // Isso vai esconder os menus de esporte e dias
+        mostrarFiltros: false,
+        campi: listarCampi()
+    });
+});
+
+router.get('/equipes/:slug', async function(req, res, next) {
+    const campus = obterCampusPorSlug(req.params.slug);
+
+    if (!campus) {
+        return res.redirect('/equipes');
+    }
+
+    const configuracoes = adminModel.getConfiguracoes();
+    const jogos = await adminModel.getJogos();
+    const atletasCampus = campusModel.getAtletas(campus.nome);
+    const modalidadesCampus = campusModel.getInscricoes(campus.nome);
+    const jogosCampus = jogos.filter((jogo) => jogo.casa === campus.nome || jogo.fora === campus.nome);
+
+    res.render('perfil', {
+        title: `Perfil - ${campus.nomeExibicao}`,
+        usuarioLogado: req.session?.usuario || null,
+        mostrarFiltros: false,
+        configuracoes,
+        statusInscricao: 'Perfil público do campus',
+        prazoModalidadesAberto: false,
+        prazoAtletasAberto: false,
+        textoModalidades: 'Ver modalidades',
+        textoAtletas: 'Ver atletas',
+        mostrarAcoesInscricao: false,
+        atletasCampus,
+        modalidadesCampus,
+        jogosCampus,
+        anoJifc: configuracoes?.ano_evento || 2026,
+        modoPublico: true,
+        campusSelecionado: campus
     });
 });
 

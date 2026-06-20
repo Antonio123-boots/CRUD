@@ -16,6 +16,7 @@
       const mostrarModalidades = typeof prazoModalidadesAberto !== 'undefined' && prazoModalidadesAberto;
       const mostrarAtletas = typeof prazoAtletasAberto !== 'undefined' && prazoAtletasAberto;
       const totalAbas = (mostrarModalidades ? 1 : 0) + (mostrarAtletas ? 1 : 0);
+      const limiteCampus = typeof limiteAtletasTotalCampus !== 'undefined' ? limiteAtletasTotalCampus : 0;
     %>
 
     <% if (!mostrarModalidades && !mostrarAtletas) { %>
@@ -35,7 +36,8 @@
           <span class="badge badge--status">Painel de Inscrições</span>
         </div>
         <h1 class="institution-title" style="color: #ece42d;"><%= nomeCampus %></h1>
-        <p class="institution-meta">Selecione as modalidades por gênero e cadastre os atletas do campus no mesmo painel.</p>
+        <p class="institution-meta">Selecione as modalidades e cadastre os atletas do campus no mesmo painel.</p>
+        <p class="institution-meta">Regulares: <strong><%= typeof quantidadeRegulares !== 'undefined' ? quantidadeRegulares : 0 %></strong> · Pendentes: <strong><%= typeof quantidadePendentes !== 'undefined' ? quantidadePendentes : 0 %></strong> · Limite regular: <strong><%= limiteCampus > 0 ? limiteCampus : 'sem limite' %></strong></p>
       </div>
     </header>
 
@@ -81,7 +83,7 @@
 
             <footer class="dashboard-footer" style="margin-top: 2.5rem; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
               <a class="btn btn-secondary" href="/perfil">Voltar ao Perfil</a>
-              <button type="submit" class="btn btn-primary primary-save-btn" style="border: none;">
+              <button type="submit" class="btn btn-success primary-save-btn" style="border: none;">
                 Salvar Inscrições
               </button>
             </footer>
@@ -94,7 +96,7 @@
       <div class="dashboard-view" id="atletas">
         <section style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.12); margin-bottom: 2rem;">
           <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.1rem;">Cadastro de Atletas do Campus</h3>
-          <p style="margin: 0 0 1.25rem; color: rgba(255,255,255,0.68);">Preencha os dados do atleta para enviá-lo para a inscrição regular.</p>
+          <p style="margin: 0 0 0.75rem; color: rgba(255,255,255,0.68);">Preencha os dados do atleta e marque até 3 modalidades para ele competir.</p>
 
           <form action="/campus/atletas/cadastrar" method="POST" class="form-grid" style="align-items: flex-end; margin-bottom: 1.5rem;">
             <label>
@@ -108,33 +110,38 @@
             </label>
 
             <label>
-              Gênero
-              <select name="genero" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-                <option value="Masculino">Masculino</option>
-                <option value="Feminino">Feminino</option>
-                <option value="Misto">Misto</option>
+              Situação
+              <select name="status" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+                <option value="Regular">Regular</option>
+                <option value="Pendente">Pendente / Reserva</option>
               </select>
             </label>
 
-            <label>
-              Modalidade
-              <select name="modalidade" required class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-                <% if (modalidadesSalvas.length > 0) { %>
+            <div style="grid-column: 1 / -1;">
+              <span style="display:block; margin-bottom: 0.5rem;">Modalidades (até 3)</span>
+              <% if (modalidadesSalvas.length > 0) { %>
+                <div class="modalidades-checkbox-grid">
                   <% modalidadesSalvas.forEach(function(modalidade) { %>
-                    <option value="<%= modalidade %>"><%= modalidade %></option>
+                    <label class="modalidade-checkbox-card">
+                      <input type="checkbox" name="modalidades" value="<%= modalidade %>">
+                      <span><%= modalidade %></span>
+                    </label>
                   <% }); %>
-                <% } else { %>
-                  <option value="" disabled selected>Salve as inscrições para liberar as modalidades</option>
-                <% } %>
-              </select>
-            </label>
+                </div>
+              <% } else { %>
+                <div style="padding: 1rem; border-radius: 14px; border: 1px dashed rgba(255,255,255,0.18); color: rgba(255,255,255,0.7);">
+                  Salve as inscrições de modalidades para liberar esta seleção.
+                </div>
+              <% } %>
+              <small style="display:block; margin-top: 0.55rem; color: rgba(255,255,255,0.6);">Marque no máximo 3 opções.</small>
+            </div>
 
             <label>
               Data de Nascimento
               <input type="date" name="dataNascimento" class="premium-text-input">
             </label>
 
-            <button type="submit" class="btn btn-primary primary-save-btn" style="border: none; height: 43px; align-self: end;">
+            <button type="submit" class="btn btn-success primary-save-btn" style="border: none; height: 43px; align-self: end;">
               Adicionar Atleta
             </button>
           </form>
@@ -152,15 +159,20 @@
               <tbody>
                 <% if (atletasSalvos.length > 0) { %>
                   <% atletasSalvos.forEach(function(atleta) { %>
-                    <tr>
+                    <tr class="<%= atleta.status === 'Regular' ? 'row--regular' : (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') ? 'row--pending' : 'row--irregular' %>">
                       <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
                       <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
-                      <td><span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= atleta.modalidade %></span></td>
+                      <td>
+                        <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
+                        <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= modalidadesAtleta.join(', ') %></span>
+                      </td>
                       <td>
                         <% if (atleta.status === 'Regular') { %>
                           <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
+                        <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
+                          <span style="color: #ffb700; font-weight: bold;">⏳ Pendente / Reserva</span>
                         <% } else { %>
-                          <span style="color: #ffb700; font-weight: bold;">⚠ Pendente</span>
+                          <span style="color: #ff4d4d; font-weight: bold;">⚠ Irregular</span>
                         <% } %>
                       </td>
                     </tr>
@@ -177,6 +189,41 @@
           </div>
         </section>
       </div>
+      <% } %>
+
+      <% if (mostrarAtletas && modalidadesSalvas.length > 0) { %>
+      <script>
+        (function () {
+          const checkboxes = Array.from(document.querySelectorAll('input[name="modalidades"]'));
+          const maxSelecionadas = 3;
+
+          function atualizarEstado() {
+            const marcadas = checkboxes.filter((item) => item.checked);
+            const bloqueadas = marcadas.length >= maxSelecionadas;
+
+            checkboxes.forEach((item) => {
+              if (!item.checked) {
+                item.disabled = bloqueadas;
+              } else {
+                item.disabled = false;
+              }
+            });
+          }
+
+          checkboxes.forEach((item) => {
+            item.addEventListener('change', () => {
+              const marcadas = checkboxes.filter((checkbox) => checkbox.checked);
+              if (marcadas.length > maxSelecionadas) {
+                item.checked = false;
+                alert('Selecione no máximo 3 modalidades.');
+              }
+              atualizarEstado();
+            });
+          });
+
+          atualizarEstado();
+        })();
+      </script>
       <% } %>
 
       <% if (totalAbas > 1) { %>

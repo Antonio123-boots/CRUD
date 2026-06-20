@@ -28,16 +28,23 @@
       const isEditando = !!(atletaEmEdicaoLocal && atletaEmEdicaoLocal.id);
       const rotaFormulario = isEditando ? `/campus/atletas/atualizar/${atletaEmEdicaoLocal.id}` : '/campus/atletas/cadastrar';
       const textoBotao = isEditando ? 'Salvar alterações' : '+ Adicionar';
+      const limiteCampus = typeof limiteAtletasTotalCampus !== 'undefined' ? limiteAtletasTotalCampus : 0;
+      const disponiveisRegulares = typeof limiteDisponivelRegulares !== 'undefined' ? limiteDisponivelRegulares : 0;
+      const modalidadesSelecionadas = isEditando
+        ? (Array.isArray(atletaEmEdicaoLocal.modalidades) ? atletaEmEdicaoLocal.modalidades : String(atletaEmEdicaoLocal.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean))
+        : [];
     %>
     
     <header class="institution-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
       <div class="institution-details">
         <div class="badge-row">
           <span class="badge badge--role">Delegação</span>
-          <span class="badge badge--status">Fase: Inscrição Regular</span>
+          <span class="badge badge--status">Regulares: <%= quantidadeRegulares || 0 %></span>
+          <span class="badge badge--status">Pendentes: <%= quantidadePendentes || 0 %></span>
         </div>
         <h1 class="institution-title" style="color: #ece42d;">Atletas do Campus</h1>
-        <p class="institution-meta">Gerencie os competidores e as suas respetivas modalidades para o <%= nomeCampus %>.</p>
+        <p class="institution-meta">Cadastre atletas regulares ou reservas pendentes para o <%= nomeCampus %>.</p>
+        <p class="institution-meta">Limite regular: <strong><%= limiteCampus > 0 ? limiteCampus : 'sem limite configurado' %></strong> · Restantes: <strong><%= limiteCampus > 0 ? disponiveisRegulares : 'livre' %></strong></p>
       </div>
     </header>
 
@@ -55,6 +62,8 @@
 
     <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.15); margin-bottom: 2.5rem;">
       <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;"><%= isEditando ? 'Editar Competidor' : 'Inscrever Novo Competidor' %></h3>
+      <p style="margin: 0 0 1rem; color: rgba(255,255,255,0.68);">Regular respeita o limite global do campus. Pendente funciona como reserva e pode ultrapassar esse limite.</p>
+      <p style="margin: 0 0 1rem; color: rgba(255,255,255,0.68);">Selecione até 3 modalidades por atleta.</p>
       
       <form action="<%= rotaFormulario %>" method="POST" class="form-grid" style="align-items: flex-end;">
         <label>
@@ -68,21 +77,29 @@
         </label>
 
         <label>
-          Gênero
-          <select name="genero" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-            <option value="Masculino" <%= isEditando && atletaEmEdicaoLocal.genero === 'Masculino' ? 'selected' : '' %>>Masculino</option>
-            <option value="Feminino" <%= isEditando && atletaEmEdicaoLocal.genero === 'Feminino' ? 'selected' : '' %>>Feminino</option>
-            <option value="Misto" <%= isEditando && atletaEmEdicaoLocal.genero === 'Misto' ? 'selected' : '' %>>Misto</option>
+          Situação
+          <select name="status" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+            <option value="Regular" <%= isEditando && atletaEmEdicaoLocal.status === 'Regular' ? 'selected' : '' %>>Regular</option>
+            <option value="Pendente" <%= isEditando && (atletaEmEdicaoLocal.status === 'Pendente' || atletaEmEdicaoLocal.status === 'Pendente_Laudo') ? 'selected' : '' %>>Pendente / Reserva</option>
           </select>
         </label>
 
-        <label>
-          Modalidade
-          <select name="modalidade" required class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
+        <div style="grid-column: 1 / -1;">
+          <span style="display:block; margin-bottom: 0.5rem;">Modalidades</span>
+          <div class="modalidades-checkbox-grid">
             <% modalidadesDisponiveis.forEach(function(modalidade) { %>
-              <option value="<%= modalidade %>" <%= isEditando && atletaEmEdicaoLocal.modalidade === modalidade ? 'selected' : '' %>><%= modalidade %></option>
+              <label class="modalidade-checkbox-card">
+                <input
+                  type="checkbox"
+                  name="modalidades"
+                  value="<%= modalidade %>"
+                  <%= modalidadesSelecionadas.includes(modalidade) ? 'checked' : '' %>
+                >
+                <span><%= modalidade %></span>
+              </label>
             <% }); %>
-          </select>
+          </div>
+          <small style="display:block; margin-top: 0.55rem; color: rgba(255,255,255,0.6);">Marque no máximo 3 opções.</small>
         </label>
 
         <label>
@@ -114,25 +131,28 @@
           <tbody>
             <% if (typeof atletas !== 'undefined' && atletas.length > 0) { %>
               <% atletas.forEach(function(atleta) { %>
-                <tr>
+                <tr class="<%= atleta.status === 'Regular' ? 'row--regular' : (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') ? 'row--pending' : 'row--irregular' %>">
                   <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
                   <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
                   <td style="color: rgba(255,255,255,0.7);"><%= atleta.dataNascimento || '-' %></td>
-                  <td><span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= atleta.modalidade %></span></td>
+                  <td>
+                    <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
+                    <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= modalidadesAtleta.join(', ') %></span>
+                  </td>
                   <td>
                     <% if (atleta.status === 'Regular') { %>
                       <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
-                    <% } else if (atleta.status === 'Pendente_Laudo') { %>
-                      <span style="color: #ffb700; font-weight: bold;">⚠ Pendente de laudo</span>
+                    <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
+                      <span style="color: #ffb700; font-weight: bold;"> ⏳ Pendente</span>
                     <% } else { %>
                       <span style="color: #ff4d4d; font-weight: bold;">⚠ Irregular</span>
                     <% } %>
                   </td>
                   <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                      <a class="btn btn-secondary" href="/campus/atletas/editar/<%= atleta.id %>" style="padding: 0.55rem 0.9rem; text-decoration: none;">Editar</a>
+                      <a class="btn btn-secondary" href="/campus/atletas/editar/<%= atleta.id %>">Editar</a>
                       <form action="/campus/atletas/excluir/<%= atleta.id %>" method="POST" onsubmit="return confirm('Deseja excluir este atleta?');">
-                        <button type="submit" class="btn btn-primary" style="padding: 0.55rem 0.9rem; border: none; background: #ff4d4d; color: white;">Excluir</button>
+                        <button type="submit" class="btn btn-danger">Excluir</button>
                       </form>
                     </div>
                   </td>
@@ -153,6 +173,39 @@
         Total de atletas regulares: <span style="color: #00ff88; margin-left: 0.35rem;"><%= typeof quantidadeRegulares !== 'undefined' ? quantidadeRegulares : 0 %></span>
       </div>
     </div>
+
+    <script>
+      (function () {
+        const checkboxes = Array.from(document.querySelectorAll('input[name="modalidades"]'));
+        const maxSelecionadas = 3;
+
+        function atualizarEstado() {
+          const marcadas = checkboxes.filter((item) => item.checked);
+          const bloqueadas = marcadas.length >= maxSelecionadas;
+
+          checkboxes.forEach((item) => {
+            if (!item.checked) {
+              item.disabled = bloqueadas;
+            } else {
+              item.disabled = false;
+            }
+          });
+        }
+
+        checkboxes.forEach((item) => {
+          item.addEventListener('change', () => {
+            const marcadas = checkboxes.filter((checkbox) => checkbox.checked);
+            if (marcadas.length > maxSelecionadas) {
+              item.checked = false;
+              alert('Selecione no máximo 3 modalidades.');
+            }
+            atualizarEstado();
+          });
+        });
+
+        atualizarEstado();
+      })();
+    </script>
 
     <footer class="dashboard-footer" style="margin-top: 2.5rem;">
       <div class="utility-actions">

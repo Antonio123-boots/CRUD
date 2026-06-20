@@ -11,6 +11,7 @@ function renderInscricoes(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   const config = adminModel.getConfiguracoes();
   const hoje = obterDataAtual();
+  const anoEvento = Number(config.ano_evento || new Date().getFullYear());
 
   const inicioModalidades = config.inicio_inscricao_modalidades;
   const fimModalidades = config.fim_inscricao_modalidades;
@@ -30,6 +31,10 @@ function renderInscricoes(req, res) {
     prazoModalidadesAberto,
     prazoAtletasAberto,
     quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
+    quantidadePendentes: campusModel.getQuantidadePendentes(nomeCampus),
+    quantidadeTotal: campusModel.getQuantidadeTotal(nomeCampus),
+    limiteAtletasTotalCampus: Number(config.limite_atletas_total_campus || 0),
+    anoEvento,
     prazosModalidades: { inicio: inicioModalidades, fim: fimModalidades },
     prazosAtletas: { inicio: inicioAtletas, fim: fimAtletas }
   });
@@ -57,6 +62,7 @@ function renderAtletas(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   const config = adminModel.getConfiguracoes();
   const hoje = obterDataAtual();
+  const anoEvento = Number(config.ano_evento || new Date().getFullYear());
 
   const inicio = config.inicio_inscricao_atletas;
   const fim = config.fim_inscricao_atletas;
@@ -64,6 +70,9 @@ function renderAtletas(req, res) {
   const atletaEmEdicao = req.query.editar ? campusModel.getAtletaPorId(req.query.editar) : null;
   const modalidadesInscritas = campusModel.getInscricoes(nomeCampus);
   const atletas = campusModel.getAtletas(nomeCampus);
+  const limiteAtletasTotalCampus = Number(config.limite_atletas_total_campus || 0);
+  const quantidadeRegulares = campusModel.getQuantidadeRegulares(nomeCampus);
+  const quantidadePendentes = campusModel.getQuantidadePendentes(nomeCampus);
 
   res.render('campus/atletas', {
     title: 'Gerenciar Atletas',
@@ -76,7 +85,12 @@ function renderAtletas(req, res) {
     nomeCampus,
     prazoAberto: prazoAberto,
     prazos: { inicio, fim },
-    quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
+    quantidadeRegulares,
+    quantidadePendentes,
+    quantidadeTotal: campusModel.getQuantidadeTotal(nomeCampus),
+    limiteAtletasTotalCampus,
+    limiteDisponivelRegulares: campusModel.getQuantidadeDisponivelRegular(nomeCampus, limiteAtletasTotalCampus),
+    anoEvento,
     mensagemErro: req.query.erro || '',
     mensagemSucesso: req.query.sucesso || ''
   });
@@ -96,16 +110,25 @@ function cadastrarAtleta(req, res) {
 
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
   try {
-    campusModel.cadastrarAtleta(nomeCampus, {
+    const atleta = campusModel.cadastrarAtleta(nomeCampus, {
       nome: req.body.nome,
       matricula: req.body.matricula,
-      modalidade: req.body.modalidade || 'Futsal Masculino',
-      genero: req.body.genero || 'Masculino',
-      dataNascimento: req.body.dataNascimento
+      modalidades: req.body.modalidades || req.body.modalidade || [],
+      dataNascimento: req.body.dataNascimento,
+      status: req.body.status || 'Regular'
+    }, {
+      limiteRegularTotalCampus: Number(config.limite_atletas_total_campus || 0),
+      anoEvento: Number(config.ano_evento || new Date().getFullYear())
     });
-    res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta cadastrado com sucesso.'));
+
+    const mensagem = atleta.status === 'Irregular'
+      ? 'Atleta cadastrado, mas marcado como irregular por idade ou inconsistência.'
+      : atleta.status === 'Pendente'
+        ? 'Atleta cadastrado como reserva pendente.'
+        : 'Atleta cadastrado com sucesso.';
+    res.redirect('/campus/atletas?sucesso=' + encodeURIComponent(mensagem));
   } catch (error) {
-    const mensagem = error.code === 'MATRICULA_DUPLICADA'
+    const mensagem = ['MATRICULA_DUPLICADA', 'LIMITE_REGULAR_EXCEDIDO', 'DATA_INVALIDA', 'IDADE_LIMITE_EXCEDIDO', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS'].includes(error.code)
       ? error.message
       : 'Não foi possível cadastrar o atleta.';
     res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
@@ -138,6 +161,10 @@ function editarAtleta(req, res) {
     prazoAberto,
     prazos: { inicio, fim },
     quantidadeRegulares: campusModel.getQuantidadeRegulares(nomeCampus),
+    quantidadePendentes: campusModel.getQuantidadePendentes(nomeCampus),
+    quantidadeTotal: campusModel.getQuantidadeTotal(nomeCampus),
+    limiteAtletasTotalCampus: Number(config.limite_atletas_total_campus || 0),
+    limiteDisponivelRegulares: campusModel.getQuantidadeDisponivelRegular(nomeCampus, Number(config.limite_atletas_total_campus || 0)),
     mensagemErro: req.query.erro || '',
     mensagemSucesso: req.query.sucesso || ''
   });
@@ -145,14 +172,18 @@ function editarAtleta(req, res) {
 
 function atualizarAtleta(req, res) {
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
+  const config = adminModel.getConfiguracoes();
 
   try {
     const atleta = campusModel.atualizarAtleta(req.params.id, nomeCampus, {
       nome: req.body.nome,
       matricula: req.body.matricula,
-      modalidade: req.body.modalidade || 'Futsal Masculino',
-      genero: req.body.genero || 'Masculino',
-      dataNascimento: req.body.dataNascimento
+      modalidades: req.body.modalidades || req.body.modalidade || [],
+      dataNascimento: req.body.dataNascimento,
+      status: req.body.status || 'Regular'
+    }, {
+      limiteRegularTotalCampus: Number(config.limite_atletas_total_campus || 0),
+      anoEvento: Number(config.ano_evento || new Date().getFullYear())
     });
 
     if (!atleta) {
@@ -161,9 +192,8 @@ function atualizarAtleta(req, res) {
 
     res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta atualizado com sucesso.'));
   } catch (error) {
-    const mensagem = error.code === 'MATRICULA_DUPLICADA'
-      ? error.message
-      : 'Não foi possível atualizar o atleta.';
+    const mensagensConhecidas = ['MATRICULA_DUPLICADA', 'IDADE_LIMITE_EXCEDIDO', 'DATA_INVALIDA', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS', 'LIMITE_REGULAR_EXCEDIDO'];
+    const mensagem = mensagensConhecidas.includes(error.code) ? error.message : 'Não foi possível atualizar o atleta.';
     res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
   }
 }
@@ -195,7 +225,7 @@ function substituirAtleta(req, res) {
   campusModel.substituirAtleta(nomeCampus, {
     nome: req.body.nome,
     matricula: req.body.matricula,
-    modalidade: req.body.modalidade || 'Futsal Masculino',
+    modalidades: req.body.modalidades || req.body.modalidade || [],
     motivo: req.body.motivo || 'Substituição por laudo'
   });
   res.redirect('/campus/atletas');

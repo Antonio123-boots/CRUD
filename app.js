@@ -71,6 +71,21 @@ app.use('/campus', campusRoutes);  // Caminhos do Campus (ex: /campus/atletas)
 app.use('/admin', adminRoutes);    // Caminhos do Admin (ex: /admin/laudos)
 app.use('/juiz', juizRoutes);      // Caminhos do Juiz / Mesário (placar e tabelas)
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+function startServer(port) {
+    const server = app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+
+    server.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+            const nextPort = Number(port) + 1;
+            console.log(`Porta ${port} em uso. Tentando a porta ${nextPort}...`);
+            startServer(nextPort);
+            return;
+        }
+
+        throw error;
+    });
+}
+
+startServer(PORT);

@@ -1,4 +1,6 @@
 const adminModel = require('../models/adminModel');
+const campusModel = require('../models/campusModel');
+const { listarCampi } = require('../models/campiCatalog');
 
 function renderConfigurar(req, res) {
   res.render('adm/configEvento', {
@@ -116,11 +118,14 @@ async function limparChaveamento(req, res) {
 }
 
 function renderAnalise(req, res) {
+  const campusSelecionado = req.query.campus || '';
+  const atletas = campusModel.getAtletasParaAnalise(campusSelecionado || null);
+
   res.render('adm/analiseAtletas', {
     title: 'Análise de Atletas',
     usuarioLogado: req.session?.usuario || null,
     mostrarFiltros: false,
-    campi,
+    campi: listarCampi(),
     campusSelecionado,
     atletas
   });
@@ -132,7 +137,7 @@ function validarAtleta(req, res) {
     return res.redirect('/admin/laudos?erro=' + encodeURIComponent('Atleta não encontrado para validação.'));
   }
 
-  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta validado com sucesso.'));
+  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta validado com sucesso.') + '#lista-atletas');
 }
 
 function marcarIrregular(req, res) {
@@ -141,7 +146,7 @@ function marcarIrregular(req, res) {
     return res.redirect('/admin/laudos?erro=' + encodeURIComponent('Atleta não encontrado para reprovação.'));
   }
 
-  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta marcado como irregular.'));
+  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta marcado como irregular.') + '#lista-atletas');
 }
 
 async function renderPlacar(req, res) {

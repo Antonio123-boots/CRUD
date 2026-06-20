@@ -1,23 +1,40 @@
 <section class="profile-shell">
   <article class="profile-card profile-card--wide">
+    <% 
+      const campusVisual = typeof campusSelecionado !== 'undefined' && campusSelecionado ? campusSelecionado : usuarioLogado;
+      const viewer = typeof usuarioLogado !== 'undefined' && usuarioLogado ? usuarioLogado : { tipo: 'visitante', perfil: 'Visitante', nome: 'Visitante', email: '' };
+      const isLoggedIn = viewer.tipo !== 'visitante';
+      const logoCampus = campusVisual && campusVisual.logoTexto ? campusVisual.logoTexto : (viewer && viewer.nome ? viewer.nome.slice(0, 2).toUpperCase() : 'IF');
+      const tituloCampus = campusVisual && campusVisual.nomeExibicao ? campusVisual.nomeExibicao : viewer.nome;
+      const listaModalidades = Array.isArray(modalidadesCampus) ? modalidadesCampus : [];
+      const listaAtletas = Array.isArray(atletasCampus) ? atletasCampus : [];
+      const publicMode = typeof modoPublico !== 'undefined' && modoPublico;
+    %>
     
     <header class="institution-header">
       <div class="institution-avatar-container">
-        <img class="institution-img" src="/img/campi/<%= usuarioLogado.id %>.png" alt="Logotipo do Campus" onerror="this.src='https://placehold.co/120x120/1c1d3b/ffffff?text=🏛️'">
+        <div class="institution-img institution-logo" style="--campus-color: <%= campusVisual && campusVisual.cor ? campusVisual.cor : '#ece42d' %>"><%= logoCampus %></div>
       </div>
       
       <div class="institution-details">
         <div class="badge-row">
-          <span class="badge badge--role"><%= usuarioLogado.perfil %></span>
+          <span class="badge badge--role"><%= publicMode ? 'Público' : viewer.perfil %></span>
           <span class="badge badge--status">Status da Inscrição: <%= statusInscricao %></span>
         </div>
-        <h1 class="institution-title"><%= usuarioLogado.nome %></h1>
-        <p class="institution-meta"> <%= usuarioLogado.email %></p>
-        <p class="institution-meta"> Nível de Acesso: <strong>Campus Institucional</strong></p>
+        <h1 class="institution-title"><%= tituloCampus %></h1>
+        <p class="institution-meta"><%= campusVisual && campusVisual.email ? campusVisual.email : viewer.email %></p>
+        <p class="institution-meta"> Nível de Acesso: <strong><%= publicMode ? 'Perfil público do campus' : 'Campus Institucional' %></strong></p>
       </div>
     </header>
 
-    <% if (usuarioLogado.tipo === 'admin') { %>
+    <% if (publicMode) { %>
+      <div style="margin-bottom: 1.25rem; padding: 0.95rem 1rem; border-radius: 14px; background: rgba(236, 228, 45, 0.08); border: 1px solid rgba(236, 228, 45, 0.18); color: rgba(255,255,255,0.88);">
+        <strong style="color: #ece42d;">Visualização pública:</strong>
+        este perfil mostra apenas o campus selecionado e não altera a conta que está logada.
+      </div>
+    <% } %>
+
+    <% if (!publicMode && viewer.tipo === 'admin') { %>
       <nav class="admin-actions-zone" aria-label="Ferramentas do Administrador">
         <h2>Gestão Geral do JIFC</h2>
         <div class="profile-actions">
@@ -28,7 +45,7 @@
       </nav>
     <% } %>
 
-    <% if (usuarioLogado.tipo === 'juiz') { %>
+    <% if (!publicMode && viewer.tipo === 'juiz') { %>
       <nav class="admin-actions-zone" aria-label="Painel do Juiz">
         <h2>Atualização de Placar e Tabelas</h2>
         <div class="profile-actions">
@@ -38,37 +55,58 @@
       </nav>
     <% } %>
 
-    <% if (usuarioLogado.tipo === 'campus') { %>
+    <% if (publicMode || viewer.tipo === 'campus') { %>
       <section class="dashboard-section">
 
-        <% if (typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.tipo === 'campus') { %>
-  <div style="margin-top: 2rem; background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
-    <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.1rem;">Painel do Competidor</h3>
-    <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 1.5rem;">
-      Gerencie a participação do seu campus nas Olimpíadas Institucionais.
-    </p>
-    
-    <a href="/campus/inscricoes" class="btn-cta-jifc" style="display: block; text-align: center; text-decoration: none;">
-      Acessar JIFC <%= typeof anoJifc !== 'undefined' ? anoJifc : '2026' %>
-    </a>
-  </div>
-<% } %>
+        <% if (!publicMode && viewer && viewer.tipo === 'campus') { %>
+          <div style="margin-top: 0.5rem; margin-bottom: 1rem; padding: 1rem 1.1rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255, 255, 255, 0.02);">
+            <h3 style="color: #ffffff; margin: 0 0 0.6rem; font-size: 1.05rem;">Painel do Competidor</h3>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0 0 1rem;">Gerencie a participação do seu campus nas Olimpíadas Institucionais.</p>
+            <a href="/campus/inscricoes" class="btn btn-primary btn-cta-jifc" style="display: block; text-align: center; text-decoration: none;">Acessar JIFC <%= typeof anoJifc !== 'undefined' ? anoJifc : '2026' %></a>
+          </div>
+        <% } %>
+
+        <div style="margin-top: 1rem; background: rgba(255, 255, 255, 0.02); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.1);">
+          <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.05rem;">Modalidades inscritas</h3>
+          <% if (listaModalidades.length) { %>
+            <ul class="data-list">
+              <% listaModalidades.forEach((modalidade) => { %>
+                <li class="data-item">
+                  <div class="item-info">
+                    <strong class="item-name"><%= modalidade %></strong>
+                    <span class="item-subtext">Modalidade confirmada para este campus</span>
+                  </div>
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <div class="feedback-empty"><p>Nenhuma modalidade inscrita para este campus.</p></div>
+          <% } %>
+        </div>
         
         <div class="dashboard-tabs" role="tablist">
           <button type="button" class="tab-trigger is-active" data-target="meus-atletas">🏃‍♂️ Atletas Inscritos</button>
-          <button type="button" class="tab-trigger" data-target="meus-jogos">📅 Calendário de Jogos</button>
+          <button type="button" class="tab-trigger" data-target="meus-jogos">📅 Jogos do Campus</button>
         </div>
 
         <div class="dashboard-view is-active" id="meus-atletas">
-          <% if (atletasCampus.length) { %>
+          <% if (listaAtletas.length) { %>
             <ul class="data-list">
-              <% atletasCampus.forEach((atleta) => { %>
+              <% listaAtletas.forEach((atleta) => { %>
+                <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
                 <li class="data-item">
                   <div class="item-info">
                     <strong class="item-name"><%= atleta.nome %></strong>
-                    <span class="item-subtext">Modalidade: <%= atleta.modalidade %></span>
+                    <span class="item-subtext">Nascimento: <%= atleta.dataNascimento %></span>
+                    <span class="item-subtext">Modalidades: <%= modalidadesAtleta.join(', ') %></span>
                   </div>
-                  <span class="status-tag"><%= atleta.status %></span>
+                  <% if (atleta.status === 'Regular') { %>
+                    <span class="status-tag" style="background: rgba(0, 255, 136, 0.12); color: #00ff88;">✓ Validado</span>
+                  <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
+                    <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Pendente</span>
+                  <% } else { %>
+                    <span class="status-tag" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d;">✗ Não validado</span>
+                  <% } %>
                 </li>
               <% }) %>
             </ul>
@@ -104,15 +142,17 @@
     <% } %>
 
     <footer class="dashboard-footer">
-      <% if (usuarioLogado.tipo === 'campus' && mostrarAcoesInscricao) { %>
-        <a id="btn-jifc-dinamico" class="btn btn-primary btn-cta-jifc" href="/campus/inscricoes">
-          JIFC
-        </a>
-      <% } %>
-
       <div class="utility-actions">
-        <a class="btn btn-secondary" href="/">Voltar ao Início</a>
-        <a class="btn btn-danger" href="/auth/logout">Encerrar Sessão</a>
+        <% if (publicMode) { %>
+          <% if (isLoggedIn) { %>
+            <a class="btn btn-secondary" href="/perfil">Voltar ao meu perfil</a>
+          <% } else { %>
+            <a class="btn btn-secondary" href="/equipes">Voltar às Equipes</a>
+          <% } %>
+        <% } else { %>
+          <a class="btn btn-secondary" href="/">Voltar ao Início</a>
+          <a class="btn btn-danger" href="/auth/logout">Encerrar Sessão</a>
+        <% } %>
       </div>
     </footer>
 
