@@ -74,7 +74,6 @@
                 <li class="data-item">
                   <div class="item-info">
                     <strong class="item-name"><%= modalidade %></strong>
-                    <span class="item-subtext">Modalidade confirmada para este campus</span>
                   </div>
                 </li>
               <% }) %>
@@ -171,27 +170,4 @@
     });
   });
 
-  // 2. Virada Automática do Ano do JIFC (Baseado no dia limite de 26/06)
-  document.addEventListener("DOMContentLoaded", () => {
-    const btnJifc = document.getElementById("btn-jifc-dinamico");
-    
-    if (btnJifc) {
-      const dataAtual = new Date();
-      const anoAtual = dataAtual.getFullYear();
-      
-      // Define a data final do JIFC do ano corrente (26 de Junho às 23:59:59)
-      // Mês em JS começa em 0 (Janeiro = 0, Junho = 5)
-      const dataLimiteJifc = new Date(anoAtual, 5, 26, 23, 59, 59);
-
-      let anoEvento = anoAtual;
-
-      // Se o dia de hoje passou de 26/06, o sistema assume que o próximo JIFC é o do ano que vem
-      if (dataAtual > dataLimiteJifc) {
-        anoEvento = anoAtual + 1;
-      }
-
-      // Altera o texto do botão mantendo a estética limpa
-      btnJifc.textContent = `Inscrições JIFC ${anoEvento}`;
-    }
-  });
 </script>

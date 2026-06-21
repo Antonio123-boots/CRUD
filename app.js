@@ -11,6 +11,7 @@ const authRoutes    = require('./routes/authRoutes');   // Processamento de logi
 const campusRoutes  = require('./routes/campusRoutes'); // Painel do Campus
 const adminRoutes   = require('./routes/adminRoutes');  // Painel do Admin
 const juizRoutes    = require('./routes/juizRoutes');   // Painel do Juiz / Mesário
+const adminModel = require('./models/adminModel');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,8 @@ app.use((req, res, next) => {
 
     res.locals.usuarioLogado = req.session?.usuario || null;
     res.locals.mostrarFiltros = false;
+    res.locals.configuracoes = adminModel.getConfiguracoes();
+    res.locals.anoJifc = adminModel.getAnoJifc();
     next();
 });
 

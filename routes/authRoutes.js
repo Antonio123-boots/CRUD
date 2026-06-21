@@ -44,10 +44,11 @@ listarCampi().forEach((campus) => {
 
 // POST /auth/login: valida e cria a sessão do usuário.
 router.post('/login', function(req, res, next) {
-    const { email, senha } = req.body;
-    const usuario = usuariosPermitidos[email?.trim().toLowerCase()];
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const senha = String(req.body.senha || '').trim();
+    const usuario = usuariosPermitidos[email];
 
-    if (!usuario || usuario.senha !== senha) {
+    if (!usuario || String(usuario.senha || '').trim() !== senha) {
         return res.render('login', {
             title: 'JIFC - Login',
             usuarioLogado: null,

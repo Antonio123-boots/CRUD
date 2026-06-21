@@ -137,7 +137,7 @@ router.get('/perfil', async function(req, res, next) {
         atletasCampus,
         modalidadesCampus,
         jogosCampus,
-        anoJifc: configuracoes?.ano_evento || 2026
+        anoJifc: adminModel.getAnoJifc()
     });
 });
 
@@ -196,7 +196,7 @@ router.get('/equipes/:slug', async function(req, res, next) {
         atletasCampus,
         modalidadesCampus,
         jogosCampus,
-        anoJifc: configuracoes?.ano_evento || 2026,
+        anoJifc: adminModel.getAnoJifc(),
         modoPublico: true,
         campusSelecionado: campus
     });

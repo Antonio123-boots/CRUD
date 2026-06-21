@@ -1,16 +1,25 @@
 // Importação da conexão ativa com o banco de dados MySQL/MariaDB
 const db = require('../config/db');
+const { readState, writeState, cloneState } = require('./stateStore');
 
-// Configurações e estados locais para fins de retrocompatibilidade ou contingência na aplicação
-const configuracoesEvento = {
+// Configurações padrão usadas quando ainda não existe estado persistido em disco.
+const configuracoesPadrao = {
   ano_evento: 2026,
+  inicio_evento: '',
+  fim_evento: '',
   inicio_inscricao_modalidades: '',
   fim_inscricao_modalidades: '',
   inicio_inscricao_atletas: '',
   fim_inscricao_atletas: '',
   inicio_sorteio_chaves: '',
-  fim_sorteio_chaves: ''
+  fim_sorteio_chaves: '',
+  limite_atletas_total_campus: 0
 };
+
+function carregarConfiguracoes() {
+  const estado = readState();
+  return { ...configuracoesPadrao, ...(estado.configuracoes || {}) };
+}
 
 const atletasPendentes = [];
 
@@ -18,15 +27,49 @@ const atletasPendentes = [];
  * Retorna as configurações locais guardadas em memória.
  */
 function getConfiguracoes() {
-  return { ...configuracoesEvento };
+  return cloneState(carregarConfiguracoes());
 }
 
 /**
  * Atualiza e mescla as novas datas configuradas pelo administrador em memória.
  */
 function salvarConfiguracoes(novosDados) {
-  Object.assign(configuracoesEvento, novosDados);
+  const estadoAtual = readState();
+  const configuracoesAtuais = { ...configuracoesPadrao, ...(estadoAtual.configuracoes || {}) };
+  const inicioEvento = novosDados.inicio_evento || configuracoesAtuais.inicio_evento || '';
+  const anoDerivado = Number(
+    novosDados.ano_evento ||
+    novosDados.anoEvento ||
+    (inicioEvento ? new Date(`${inicioEvento}T00:00:00`).getFullYear() : configuracoesAtuais.ano_evento)
+  );
+
+  estadoAtual.configuracoes = {
+    ...configuracoesAtuais,
+    ...novosDados,
+    ano_evento: Number.isFinite(anoDerivado) ? anoDerivado : configuracoesAtuais.ano_evento,
+    limite_atletas_total_campus: Number(
+      novosDados.limite_atletas_total_campus ?? configuracoesAtuais.limite_atletas_total_campus ?? 0
+    )
+  };
+
+  writeState(estadoAtual);
   return getConfiguracoes();
+}
+
+function getAnoJifc() {
+  const configuracoes = getConfiguracoes();
+  const anoBase = Number(configuracoes.ano_evento) || new Date().getFullYear();
+
+  if (!configuracoes.fim_evento) {
+    return anoBase;
+  }
+
+  const limiteEvento = new Date(`${configuracoes.fim_evento}T23:59:59`);
+  if (Number.isNaN(limiteEvento.getTime())) {
+    return anoBase;
+  }
+
+  return new Date() > limiteEvento ? anoBase + 1 : anoBase;
 }
 
 /**
@@ -339,6 +382,7 @@ async function efetuarChaveamentoMatematico(modalidadeId, subCategoria = 'geral'
 module.exports = {
   getConfiguracoes,
   salvarConfiguracoes,
+  getAnoJifc,
   getAtletasPendentes,
   validarAtleta,
   getJogos,

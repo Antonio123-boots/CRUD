@@ -13,13 +13,15 @@ function renderConfigurar(req, res) {
 
 function salvarConfiguracoes(req, res) {
   adminModel.salvarConfiguracoes({
-    ano_evento: req.body.anoEvento, // ◄ ADICIONE APENAS ESTA LINHA AQUI
+    inicio_evento: req.body.inicio_evento,
+    fim_evento: req.body.fim_evento,
     inicio_inscricao_modalidades: req.body.inicioInscricoesModalidades,
     fim_inscricao_modalidades: req.body.fimInscricoesModalidades,
     inicio_inscricao_atletas: req.body.inicioInscricoesAtletas,
     fim_inscricao_atletas: req.body.fimInscricoesAtletas,
     inicio_sorteio_chaves: req.body.inicioSorteio,
-    fim_sorteio_chaves: req.body.fimSorteio
+    fim_sorteio_chaves: req.body.fimSorteio,
+    limite_atletas_total_campus: req.body.limite_atletas_total_campus
   });
   res.redirect('/admin/configurar');
 }

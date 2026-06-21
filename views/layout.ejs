@@ -20,7 +20,7 @@
                     <a href="/equipes" class="nav-btn">EQUIPES</a>
                     <% if (typeof usuarioLogado !== 'undefined' && usuarioLogado) { %>
                         <% if (usuarioLogado.tipo === 'admin') { %>
-                            <a href="/admin/configurar" class="nav-btn">JIFC 2026</a>
+                            <a href="/admin/configurar" class="nav-btn">JIFC <%= typeof anoJifc !== 'undefined' ? anoJifc : '2026' %></a>
                             <a href="/admin/chaveamento" class="nav-btn">CHAVEAMENTO</a>
                         <% } %>
                         <% if (usuarioLogado.tipo === 'juiz') { %>

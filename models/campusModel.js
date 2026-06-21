@@ -1,5 +1,6 @@
 // Base de dados local em memória para modalidades e atletas dos campus.
 const { listarCampi } = require('./campiCatalog');
+const { readState, writeState } = require('./stateStore');
 
 const campusBase = listarCampi();
 const modalidadesBase = [
@@ -11,32 +12,24 @@ const modalidadesBase = [
   'Basquete Feminino'
 ];
 
-const inscricoesCampus = campusBase.reduce((acumulador, campus, index) => {
-  const primeiraModalidade = modalidadesBase[index % modalidadesBase.length];
-  const segundaModalidade = modalidadesBase[(index + 2) % modalidadesBase.length];
-
-  acumulador[campus.nome] = [primeiraModalidade, segundaModalidade].filter((modalidade, posicao, lista) => lista.indexOf(modalidade) === posicao);
-  return acumulador;
-}, {});
-
 const nomesAtletas = [
   'Lucas Mendes', 'Camila Nunes', 'Bruno Alves', 'Ana Souza', 'Pedro Henrique',
   'Mariana Silva', 'João Victor', 'Luiza Costa', 'Gabriel Martins', 'Bianca Rocha',
   'Rafael Oliveira', 'Nina Pereira', 'Caio Santos', 'Aline Freitas', 'Thiago Cardoso'
 ];
 
-const atletasCampus = campusBase.map((campus, index) => ({
-  id: index + 1,
-  nome: nomesAtletas[index],
-  campus: campus.nome,
-  matricula: `2026${String(index + 1).padStart(4, '0')}`,
-  modalidade: inscricoesCampus[campus.nome][0],
-  dataNascimento: `200${index % 3 === 0 ? 6 : 7}-${String((index % 9) + 1).padStart(2, '0')}-${String((index % 27) + 1).padStart(2, '0')}`,
-  status: 'Regular'
-}));
+const estadoInicialCampus = carregarEstadoCampus();
+const inscricoesCampus = estadoInicialCampus.inscricoesCampus;
+
+const atletasCampus = estadoInicialCampus.atletasCampus;
 
 function normalizarMatricula(matricula) {
   return String(matricula || '').trim();
+}
+
+function validarNomeCompleto(nome) {
+  const valor = String(nome || '').trim().replace(/\s+/g, ' ');
+  return valor.split(' ').filter(Boolean).length >= 2 ? valor : '';
 }
 
 function obterAnoAtual() {
@@ -67,6 +60,15 @@ function normalizarModalidades(valor) {
   return [...new Set(modalidades)].slice(0, 3);
 }
 
+function normalizarInscricoesCampus(valor) {
+  const lista = Array.isArray(valor) ? valor : [valor];
+  const modalidades = lista
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(modalidades)];
+}
+
 function atletaEhSub19(dados, opcoes = {}) {
   const anoNascimento = obterAnoNascimento(dados.dataNascimento);
   const anoEvento = obterAnoEvento(opcoes);
@@ -78,6 +80,58 @@ function atletaEhSub19(dados, opcoes = {}) {
 function obterModalidadesSalvas(dados) {
   const modalidades = normalizarModalidades(dados.modalidades || dados.modalidade);
   return modalidades.length ? modalidades : [];
+}
+
+function criarEstadoPadraoCampus() {
+  const inscricoesPadrao = campusBase.reduce((acumulador, campus, index) => {
+    const primeiraModalidade = modalidadesBase[index % modalidadesBase.length];
+    const segundaModalidade = modalidadesBase[(index + 2) % modalidadesBase.length];
+
+    acumulador[campus.nome] = [primeiraModalidade, segundaModalidade].filter((modalidade, posicao, lista) => lista.indexOf(modalidade) === posicao);
+    return acumulador;
+  }, {});
+
+  const atletasPadrao = campusBase.map((campus, index) => ({
+    id: index + 1,
+    nome: nomesAtletas[index],
+    campus: campus.nome,
+    matricula: `2026${String(index + 1).padStart(4, '0')}`,
+    modalidade: inscricoesPadrao[campus.nome][0],
+    dataNascimento: `200${index % 3 === 0 ? 6 : 7}-${String((index % 9) + 1).padStart(2, '0')}-${String((index % 27) + 1).padStart(2, '0')}`,
+    status: 'Regular'
+  }));
+
+  return {
+    inscricoesCampus: inscricoesPadrao,
+    atletasCampus: atletasPadrao
+  };
+}
+
+function carregarEstadoCampus() {
+  const estado = readState();
+  const padrao = criarEstadoPadraoCampus();
+  const campusPersistido = estado.campus || {};
+  const inscricoesPersistidas = campusPersistido.inscricoesCampus || campusPersistido.inscricoes || {};
+
+  return {
+    inscricoesCampus: {
+      ...padrao.inscricoesCampus,
+      ...inscricoesPersistidas
+    },
+    atletasCampus: Object.prototype.hasOwnProperty.call(campusPersistido, 'atletasCampus')
+      ? campusPersistido.atletasCampus
+      : (Object.prototype.hasOwnProperty.call(campusPersistido, 'atletas') ? campusPersistido.atletas : padrao.atletasCampus)
+  };
+}
+
+function persistirEstadoCampus() {
+  const estadoAtual = readState();
+  estadoAtual.campus = {
+    inscricoesCampus,
+    atletasCampus
+  };
+
+  writeState(estadoAtual);
 }
 
 function determinarStatusAtleta(dados, excluirId = null, statusSolicitado = 'Regular', opcoes = {}) {
@@ -118,7 +172,8 @@ function getInscricoes(campusNome) {
 
 // Salva a lista de modalidades escolhidas por um campus.
 function salvarInscricoes(campusNome, modalidades) {
-  inscricoesCampus[campusNome] = Array.isArray(modalidades) ? modalidades : [modalidades].filter(Boolean);
+  inscricoesCampus[campusNome] = normalizarInscricoesCampus(modalidades);
+  persistirEstadoCampus();
   return getInscricoes(campusNome);
 }
 
@@ -178,6 +233,7 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
   const statusSolicitado = normalizarStatusSolicitado(dados.status);
   const limiteRegularTotalCampus = Number(opcoes.limiteRegularTotalCampus || 0);
   const modalidadesSelecionadas = obterModalidadesSalvas(dados);
+  const nomeCompleto = validarNomeCompleto(dados.nome);
 
   if (matriculaExistente) {
     const erro = new Error('Já existe um atleta cadastrado com esta matrícula neste campus.');
@@ -188,6 +244,12 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
   if (obterAnoNascimento(dados.dataNascimento) === null) {
     const erro = new Error('Data de nascimento inválida.');
     erro.code = 'DATA_INVALIDA';
+    throw erro;
+  }
+
+  if (!nomeCompleto) {
+    const erro = new Error('Informe o nome completo do atleta, com nome e sobrenome.');
+    erro.code = 'NOME_INCOMPLETO';
     throw erro;
   }
 
@@ -217,7 +279,7 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
 
   const atleta = {
     id: Date.now(),
-    nome: dados.nome,
+    nome: nomeCompleto,
     matricula: matriculaNormalizada,
     modalidade: modalidadesSelecionadas.join(', '),
     modalidades: modalidadesSelecionadas,
@@ -226,6 +288,7 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
     status: statusSolicitado
   };
   atletasCampus.push(atleta);
+  persistirEstadoCampus();
   return atleta;
 }
 
@@ -240,6 +303,7 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
   const statusSolicitado = normalizarStatusSolicitado(dados.status || atleta.status);
   const limiteRegularTotalCampus = Number(opcoes.limiteRegularTotalCampus || 0);
   const modalidadesSelecionadas = obterModalidadesSalvas(dados);
+  const nomeCompleto = validarNomeCompleto(dados.nome);
 
   if (matriculaExistente) {
     const erro = new Error('Já existe um atleta cadastrado com esta matrícula neste campus.');
@@ -250,6 +314,12 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
   if (obterAnoNascimento(dados.dataNascimento) === null) {
     const erro = new Error('Data de nascimento inválida.');
     erro.code = 'DATA_INVALIDA';
+    throw erro;
+  }
+
+  if (!nomeCompleto) {
+    const erro = new Error('Informe o nome completo do atleta, com nome e sobrenome.');
+    erro.code = 'NOME_INCOMPLETO';
     throw erro;
   }
 
@@ -280,12 +350,13 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
     }
   }
 
-  atleta.nome = dados.nome;
+  atleta.nome = nomeCompleto;
   atleta.matricula = matriculaNormalizada;
   atleta.modalidade = modalidadesSelecionadas.join(', ');
   atleta.modalidades = modalidadesSelecionadas;
   atleta.dataNascimento = dados.dataNascimento;
   atleta.status = statusSolicitado;
+  persistirEstadoCampus();
 
   return { ...atleta };
 }
@@ -303,6 +374,7 @@ function atualizarStatusAtleta(atletaId, novoStatus) {
   }
 
   atleta.status = statusNormalizado;
+  persistirEstadoCampus();
   return { ...atleta };
 }
 
@@ -313,14 +385,23 @@ function excluirAtleta(atletaId, campusNome) {
   }
 
   atletasCampus.splice(indice, 1);
+  persistirEstadoCampus();
   return true;
 }
 
 // Cria uma substituição com status pendente de laudo.
 function substituirAtleta(campusNome, dados) {
-  const atleta = { id: Date.now(), ...dados, campus: campusNome, modalidades: normalizarModalidades(dados.modalidades || dados.modalidade), status: 'Pendente' };
+  const nomeCompleto = validarNomeCompleto(dados.nome);
+  if (!nomeCompleto) {
+    const erro = new Error('Informe o nome completo do atleta, com nome e sobrenome.');
+    erro.code = 'NOME_INCOMPLETO';
+    throw erro;
+  }
+
+  const atleta = { id: Date.now(), ...dados, nome: nomeCompleto, campus: campusNome, modalidades: normalizarModalidades(dados.modalidades || dados.modalidade), status: 'Pendente' };
   atleta.modalidade = Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : dados.modalidade;
   atletasCampus.push(atleta);
+  persistirEstadoCampus();
   return atleta;
 }
 

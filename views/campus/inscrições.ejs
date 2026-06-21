@@ -42,7 +42,8 @@
     </header>
 
     <% if (mostrarModalidades || mostrarAtletas) { %>
-      <div class="dashboard-tabs" role="tablist" style="grid-template-columns: repeat(<%= totalAbas %>, minmax(0, 1fr));">
+        <div class="dashboard-tabs" role="tablist" style="grid-template-columns: repeat(<%= String(totalAbas) %>, minmax(0, 1fr));">
+
         <% if (mostrarModalidades) { %>
           <button type="button" class="tab-trigger is-active" data-target="modalidades">Modalidades</button>
         <% } %>
@@ -113,12 +114,12 @@
               Situação
               <select name="status" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
                 <option value="Regular">Regular</option>
-                <option value="Pendente">Pendente / Reserva</option>
+                <option value="Pendente">Pendente</option>
               </select>
             </label>
 
             <div style="grid-column: 1 / -1;">
-              <span style="display:block; margin-bottom: 0.5rem;">Modalidades (até 3)</span>
+              <span style="display:block; margin-bottom: 0.5rem;">Modalidades</span>
               <% if (modalidadesSalvas.length > 0) { %>
                 <div class="modalidades-checkbox-grid">
                   <% modalidadesSalvas.forEach(function(modalidade) { %>
@@ -194,7 +195,12 @@
       <% if (mostrarAtletas && modalidadesSalvas.length > 0) { %>
       <script>
         (function () {
-          const checkboxes = Array.from(document.querySelectorAll('input[name="modalidades"]'));
+          const formAtletas = document.querySelector('#atletas form[action="/campus/atletas/cadastrar"]');
+          const checkboxes = formAtletas ? Array.from(formAtletas.querySelectorAll('input[name="modalidades"]')) : [];
+          if (!checkboxes.length) {
+            return;
+          }
+
           const maxSelecionadas = 3;
 
           function atualizarEstado() {

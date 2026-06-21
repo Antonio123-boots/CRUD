@@ -128,7 +128,8 @@ function cadastrarAtleta(req, res) {
         : 'Atleta cadastrado com sucesso.';
     res.redirect('/campus/atletas?sucesso=' + encodeURIComponent(mensagem));
   } catch (error) {
-    const mensagem = ['MATRICULA_DUPLICADA', 'LIMITE_REGULAR_EXCEDIDO', 'DATA_INVALIDA', 'IDADE_LIMITE_EXCEDIDO', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS'].includes(error.code)
+    const mensagensConhecidas = ['MATRICULA_DUPLICADA', 'LIMITE_REGULAR_EXCEDIDO', 'DATA_INVALIDA', 'IDADE_LIMITE_EXCEDIDO', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS', 'NOME_INCOMPLETO'];
+    const mensagem = mensagensConhecidas.includes(error.code)
       ? error.message
       : 'Não foi possível cadastrar o atleta.';
     res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
@@ -192,7 +193,7 @@ function atualizarAtleta(req, res) {
 
     res.redirect('/campus/atletas?sucesso=' + encodeURIComponent('Atleta atualizado com sucesso.'));
   } catch (error) {
-    const mensagensConhecidas = ['MATRICULA_DUPLICADA', 'IDADE_LIMITE_EXCEDIDO', 'DATA_INVALIDA', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS', 'LIMITE_REGULAR_EXCEDIDO'];
+    const mensagensConhecidas = ['MATRICULA_DUPLICADA', 'IDADE_LIMITE_EXCEDIDO', 'DATA_INVALIDA', 'MODALIDADES_OBRIGATORIAS', 'MODALIDADES_EXCEDIDAS', 'LIMITE_REGULAR_EXCEDIDO', 'NOME_INCOMPLETO'];
     const mensagem = mensagensConhecidas.includes(error.code) ? error.message : 'Não foi possível atualizar o atleta.';
     res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
   }
@@ -222,13 +223,19 @@ function substituirAtleta(req, res) {
   }
 
   const nomeCampus = req.session?.usuario?.nome || 'IFC Blumenau';
-  campusModel.substituirAtleta(nomeCampus, {
-    nome: req.body.nome,
-    matricula: req.body.matricula,
-    modalidades: req.body.modalidades || req.body.modalidade || [],
-    motivo: req.body.motivo || 'Substituição por laudo'
-  });
-  res.redirect('/campus/atletas');
+
+  try {
+    campusModel.substituirAtleta(nomeCampus, {
+      nome: req.body.nome,
+      matricula: req.body.matricula,
+      modalidades: req.body.modalidades || req.body.modalidade || [],
+      motivo: req.body.motivo || 'Substituição por laudo'
+    });
+    res.redirect('/campus/atletas');
+  } catch (error) {
+    const mensagem = error.code === 'NOME_INCOMPLETO' ? error.message : 'Não foi possível registrar a substituição.';
+    res.redirect('/campus/atletas?erro=' + encodeURIComponent(mensagem));
+  }
 }
 
 // 6. Lista os jogos relacionados ao campus autenticado (Mantido intacto)

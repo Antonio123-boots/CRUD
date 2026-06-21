@@ -67,8 +67,18 @@
       
       <form action="<%= rotaFormulario %>" method="POST" class="form-grid" style="align-items: flex-end;">
         <label>
-          Nome do Atleta
-          <input type="text" name="nome" placeholder="Ex: Gabriel Silva" required class="premium-text-input" value="<%= isEditando ? atletaEmEdicaoLocal.nome : '' %>">
+          Nome completo do atleta
+          <input
+            type="text"
+            name="nome"
+            placeholder="Ex: Gabriel Silva Santos"
+            required
+            class="premium-text-input"
+            value="<%= isEditando ? atletaEmEdicaoLocal.nome : '' %>"
+            pattern="^[^\s].*\s+.+$"
+            title="Digite o nome completo, com nome e sobrenome."
+          >
+          <small style="display:block; margin-top: 0.35rem; color: rgba(255,255,255,0.6);">Informe nome e sobrenome para manter o cadastro completo.</small>
         </label>
 
         <label>
@@ -137,7 +147,15 @@
                   <td style="color: rgba(255,255,255,0.7);"><%= atleta.dataNascimento || '-' %></td>
                   <td>
                     <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
-                    <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= modalidadesAtleta.join(', ') %></span>
+                    <% if (modalidadesAtleta.length > 1) { %>
+                      <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                        <% modalidadesAtleta.forEach(function(modalidade) { %>
+                          <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff; white-space: nowrap;"><%= modalidade %></span>
+                        <% }); %>
+                      </div>
+                    <% } else { %>
+                      <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= modalidadesAtleta.join(', ') %></span>
+                    <% } %>
                   </td>
                   <td>
                     <% if (atleta.status === 'Regular') { %>
