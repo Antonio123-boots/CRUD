@@ -19,6 +19,45 @@ const modalidades = [
     { slug: 'basquete-feminino', nome: 'Basquete Feminino', genero: 'Feminino', icone: '🏀', dia: '26/06', chaves: ['A'] }
 ];
 
+function agruparJogosPorDia(jogos) {
+    return jogos.reduce((acumulador, jogo) => {
+        const dia = jogo.data;
+        if (!acumulador[dia]) {
+            acumulador[dia] = [];
+        }
+        acumulador[dia].push(jogo);
+        return acumulador;
+    }, {});
+}
+
+function gerarDiasDoEvento(configuracoes) {
+    const inicioEvento = configuracoes.inicio_evento;
+    const fimEvento = configuracoes.fim_evento;
+
+    if (!inicioEvento || !fimEvento) {
+        return [];
+    }
+
+    const inicio = new Date(`${inicioEvento}T00:00:00`);
+    const fim = new Date(`${fimEvento}T00:00:00`);
+
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || inicio > fim) {
+        return [];
+    }
+
+    const dias = [];
+    const cursor = new Date(inicio);
+
+    while (cursor <= fim) {
+        const dia = String(cursor.getDate()).padStart(2, '0');
+        const mes = String(cursor.getMonth() + 1).padStart(2, '0');
+        dias.push(`${dia}/${mes}`);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return dias;
+}
+
 function gerarJogos() {
     return modalidades.map((modalidade, index) => ({
         ...modalidade,
@@ -114,6 +153,7 @@ router.get('/perfil', async function(req, res, next) {
     const textoModalidades = prazoModalidadesAberto ? 'Inscrever modalidades' : 'Ver modalidades';
     const textoAtletas = prazoAtletasAberto ? 'Inscrever atletas' : 'Substituir atletas';
     const mostrarAcoesInscricao = prazoModalidadesAberto || prazoAtletasAberto;
+    const anoBaseEvento = Number(configuracoes.ano_evento || new Date().getFullYear());
 
     const campusNome = req.session.usuario.nome || 'IFC Blumenau';
     const atletasCampus = campusModel.getAtletas(campusNome);
@@ -122,6 +162,14 @@ router.get('/perfil', async function(req, res, next) {
     const jogosCampus = jogos.filter((jogo) =>
         jogo.casa === campusNome || jogo.fora === campusNome
     );
+    const jogosCampusPorDia = agruparJogosPorDia(jogosCampus);
+    const diasEvento = gerarDiasDoEvento(configuracoes);
+    const diasJogosCampus = diasEvento.length ? diasEvento : Object.keys(jogosCampusPorDia).sort((a, b) => {
+        const [diaA, mesA] = a.split('/').map(Number);
+        const [diaB, mesB] = b.split('/').map(Number);
+        return new Date(anoBaseEvento, (mesA || 1) - 1, diaA || 1) - new Date(anoBaseEvento, (mesB || 1) - 1, diaB || 1);
+    });
+    const diaJogosSelecionado = diasJogosCampus.includes(req.query.dia) ? req.query.dia : (diasJogosCampus[0] || '');
 
     res.render('perfil', {
         title: 'JIFC - Perfil',
@@ -137,6 +185,10 @@ router.get('/perfil', async function(req, res, next) {
         atletasCampus,
         modalidadesCampus,
         jogosCampus,
+        jogosCampusPorDia,
+        diasEvento,
+        diasJogosCampus,
+        diaJogosSelecionado,
         anoJifc: adminModel.getAnoJifc()
     });
 });
@@ -181,6 +233,14 @@ router.get('/equipes/:slug', async function(req, res, next) {
     const atletasCampus = campusModel.getAtletas(campus.nome);
     const modalidadesCampus = campusModel.getInscricoes(campus.nome);
     const jogosCampus = jogos.filter((jogo) => jogo.casa === campus.nome || jogo.fora === campus.nome);
+    const jogosCampusPorDia = agruparJogosPorDia(jogosCampus);
+    const diasEvento = gerarDiasDoEvento(configuracoes);
+    const diasJogosCampus = diasEvento.length ? diasEvento : Object.keys(jogosCampusPorDia).sort((a, b) => {
+        const [diaA, mesA] = a.split('/').map(Number);
+        const [diaB, mesB] = b.split('/').map(Number);
+        return new Date(Number(configuracoes.ano_evento || new Date().getFullYear()), (mesA || 1) - 1, diaA || 1) - new Date(Number(configuracoes.ano_evento || new Date().getFullYear()), (mesB || 1) - 1, diaB || 1);
+    });
+    const diaJogosSelecionado = diasJogosCampus.includes(req.query.dia) ? req.query.dia : (diasJogosCampus[0] || '');
 
     res.render('perfil', {
         title: `Perfil - ${campus.nomeExibicao}`,
@@ -196,6 +256,10 @@ router.get('/equipes/:slug', async function(req, res, next) {
         atletasCampus,
         modalidadesCampus,
         jogosCampus,
+        jogosCampusPorDia,
+        diasEvento,
+        diasJogosCampus,
+        diaJogosSelecionado,
         anoJifc: adminModel.getAnoJifc(),
         modoPublico: true,
         campusSelecionado: campus

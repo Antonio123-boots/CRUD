@@ -143,12 +143,12 @@ function validarAtleta(req, res) {
 }
 
 function marcarIrregular(req, res) {
-  const atleta = campusModel.atualizarStatusAtleta(req.params.atletaId, 'Irregular');
+  const atleta = campusModel.atualizarStatusAtleta(req.params.atletaId, 'Reprovado');
   if (!atleta) {
     return res.redirect('/admin/laudos?erro=' + encodeURIComponent('Atleta não encontrado para reprovação.'));
   }
 
-  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta marcado como irregular.') + '#lista-atletas');
+  res.redirect('/admin/laudos?campus=' + encodeURIComponent(atleta.campus) + '&sucesso=' + encodeURIComponent('Atleta reprovado com sucesso.') + '#lista-atletas');
 }
 
 async function renderPlacar(req, res) {

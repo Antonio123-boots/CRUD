@@ -1,50 +1,42 @@
 <section class="profile-shell">
 
-  <% if (typeof prazoAberto !== 'undefined' && !prazoAberto) { %>
-  <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; font-weight: bold; text-align: center; width: 100%;">
-    ⚠ Período de inscrições ENCERRADO ou não iniciado para esta etapa!
-    <br>
-    <small style="font-weight: normal; color: rgba(255,255,255,0.6);">
-      Prazo: <%= prazos.inicio ? prazos.inicio : 'Não definido' %> até <%= prazos.fim ? prazos.fim : 'Não definido' %>
-    </small>
-  </div>
-<% } %>
-
   <article class="profile-card profile-card--wide">
     <% 
-      const modalidadesDisponiveis = Array.isArray(modalidadesInscritas) && modalidadesInscritas.length > 0
-        ? modalidadesInscritas
-        : [
-            'Atletismo Masculino', 'Atletismo Feminino',
-            'Basquete Masculino', 'Basquete Feminino',
-            'Futsal Masculino', 'Futsal Feminino',
-            'Handebol Masculino', 'Handebol Feminino',
-            'Tênis de Mesa Masculino', 'Tênis de Mesa Feminino',
-            'Voleibol Masculino', 'Voleibol Feminino',
-            'Vôlei de Praia Masculino', 'Vôlei de Praia Feminino',
-            'Xadrez Masculino', 'Xadrez Feminino'
-          ];
-      const atletaEmEdicaoLocal = typeof atletaEmEdicao !== 'undefined' ? atletaEmEdicao : null;
-      const isEditando = !!(atletaEmEdicaoLocal && atletaEmEdicaoLocal.id);
-      const rotaFormulario = isEditando ? `/campus/atletas/atualizar/${atletaEmEdicaoLocal.id}` : '/campus/atletas/cadastrar';
-      const textoBotao = isEditando ? 'Salvar alterações' : '+ Adicionar';
+      const atletasLista = Array.isArray(atletas) ? atletas : [];
+      const extrairGenero = (atleta) => {
+        const generoDireto = String(atleta?.genero || atleta?.sexo || '').trim().toLowerCase();
+        if (generoDireto === 'masculino' || generoDireto === 'm') return 'Masculino';
+        if (generoDireto === 'feminino' || generoDireto === 'f') return 'Feminino';
+
+        const modalidadesAtleta = Array.isArray(atleta?.modalidades)
+          ? atleta.modalidades
+          : String(atleta?.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean);
+
+        if (modalidadesAtleta.some((modalidade) => /feminino/i.test(modalidade))) return 'Feminino';
+        if (modalidadesAtleta.some((modalidade) => /masculino/i.test(modalidade))) return 'Masculino';
+        return 'Masculino';
+      };
+
+      const atletasMasculinos = atletasLista.filter((atleta) => extrairGenero(atleta) === 'Masculino');
+      const atletasFemininos = atletasLista.filter((atleta) => extrairGenero(atleta) === 'Feminino');
+      const totalAtletasCampus = typeof quantidadeTotal !== 'undefined' ? quantidadeTotal : atletasLista.length;
       const limiteCampus = typeof limiteAtletasTotalCampus !== 'undefined' ? limiteAtletasTotalCampus : 0;
       const disponiveisRegulares = typeof limiteDisponivelRegulares !== 'undefined' ? limiteDisponivelRegulares : 0;
-      const modalidadesSelecionadas = isEditando
-        ? (Array.isArray(atletaEmEdicaoLocal.modalidades) ? atletaEmEdicaoLocal.modalidades : String(atletaEmEdicaoLocal.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean))
-        : [];
+      const totalAnalise = typeof quantidadeAnalise !== 'undefined' ? quantidadeAnalise : 0;
+      const totalReprovados = typeof quantidadeReprovados !== 'undefined' ? quantidadeReprovados : 0;
     %>
     
     <header class="institution-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
       <div class="institution-details">
         <div class="badge-row">
-          <span class="badge badge--role">Delegação</span>
+          <span class="badge badge--status">Total: <%= totalAtletasCampus %></span>
           <span class="badge badge--status">Regulares: <%= quantidadeRegulares || 0 %></span>
-          <span class="badge badge--status">Pendentes: <%= quantidadePendentes || 0 %></span>
+          <span class="badge badge--status">Em análise: <%= totalAnalise %></span>
+          <span class="badge badge--status">Reprovados: <%= totalReprovados %></span>
         </div>
         <h1 class="institution-title" style="color: #ece42d;">Atletas do Campus</h1>
-        <p class="institution-meta">Cadastre atletas regulares ou reservas pendentes para o <%= nomeCampus %>.</p>
-        <p class="institution-meta">Limite regular: <strong><%= limiteCampus > 0 ? limiteCampus : 'sem limite configurado' %></strong> · Restantes: <strong><%= limiteCampus > 0 ? disponiveisRegulares : 'livre' %></strong></p>
+        <p class="institution-meta">Listagem dos atletas inscritos do <%= nomeCampus %>, separada por masculino e feminino.</p>
+        <p class="institution-meta">Limite total do campus: <strong><%= limiteCampus > 0 ? limiteCampus : 'sem limite configurado' %></strong> · Restantes: <strong><%= limiteCampus > 0 ? disponiveisRegulares : 'livre' %></strong></p>
       </div>
     </header>
 
@@ -60,170 +52,77 @@
       </div>
     <% } %>
 
-    <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.15); margin-bottom: 2.5rem;">
-      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;"><%= isEditando ? 'Editar Competidor' : 'Inscrever Novo Competidor' %></h3>
-      <p style="margin: 0 0 1rem; color: rgba(255,255,255,0.68);">Regular respeita o limite global do campus. Pendente funciona como reserva e pode ultrapassar esse limite.</p>
-      <p style="margin: 0 0 1rem; color: rgba(255,255,255,0.68);">Selecione até 3 modalidades por atleta.</p>
-      
-      <form action="<%= rotaFormulario %>" method="POST" class="form-grid" style="align-items: flex-end;">
-        <label>
-          Nome completo do atleta
-          <input
-            type="text"
-            name="nome"
-            placeholder="Ex: Gabriel Silva Santos"
-            required
-            class="premium-text-input"
-            value="<%= isEditando ? atletaEmEdicaoLocal.nome : '' %>"
-            pattern="^[^\s].*\s+.+$"
-            title="Digite o nome completo, com nome e sobrenome."
-          >
-          <small style="display:block; margin-top: 0.35rem; color: rgba(255,255,255,0.6);">Informe nome e sobrenome para manter o cadastro completo.</small>
-        </label>
+    <% if (totalReprovados > 0) { %>
+      <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 700;">
+        <%= totalReprovados %> atleta(s) foram reprovados e não podem participar do JIFC.
+      </div>
+    <% } %>
 
-        <label>
-          Matrícula Académica
-          <input type="text" name="matricula" placeholder="Ex: 20261102" required class="premium-text-input" value="<%= isEditando ? atletaEmEdicaoLocal.matricula : '' %>">
-        </label>
+    <div style="background: rgba(255, 255, 255, 0.01); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 1.25rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 1.1rem;">Masculino</h3>
+        <span style="color: rgba(255,255,255,0.65); font-size: 0.92rem;"><%= atletasMasculinos.length %> atleta(s)</span>
+      </div>
 
-        <label>
-          Situação
-          <select name="status" class="premium-text-input" style="height: 43px; background: #1c1d3b; color: white;">
-            <option value="Regular" <%= isEditando && atletaEmEdicaoLocal.status === 'Regular' ? 'selected' : '' %>>Regular</option>
-            <option value="Pendente" <%= isEditando && (atletaEmEdicaoLocal.status === 'Pendente' || atletaEmEdicaoLocal.status === 'Pendente_Laudo') ? 'selected' : '' %>>Pendente / Reserva</option>
-          </select>
-        </label>
-
-        <div style="grid-column: 1 / -1;">
-          <span style="display:block; margin-bottom: 0.5rem;">Modalidades</span>
-          <div class="modalidades-checkbox-grid">
-            <% modalidadesDisponiveis.forEach(function(modalidade) { %>
-              <label class="modalidade-checkbox-card">
-                <input
-                  type="checkbox"
-                  name="modalidades"
-                  value="<%= modalidade %>"
-                  <%= modalidadesSelecionadas.includes(modalidade) ? 'checked' : '' %>
-                >
-                <span><%= modalidade %></span>
-              </label>
-            <% }); %>
-          </div>
-          <small style="display:block; margin-top: 0.55rem; color: rgba(255,255,255,0.6);">Marque no máximo 3 opções.</small>
-        </label>
-
-        <label>
-          Data de Nascimento
-          <input type="date" name="dataNascimento" class="premium-text-input" value="<%= isEditando && atletaEmEdicaoLocal.dataNascimento ? atletaEmEdicaoLocal.dataNascimento : '' %>">
-        </label>
-
-        <button type="submit" class="btn btn-primary premium-action-btn addition-btn" style="height: 43px; font-weight: 700;">
-          <%= textoBotao %>
-        </button>
-      </form>
+      <% if (atletasMasculinos.length) { %>
+        <ul class="data-list">
+          <% atletasMasculinos.forEach(function(atleta) { %>
+            <li class="data-item">
+              <div class="item-info">
+                <strong class="item-name"><%= atleta.nome %></strong>
+                <span class="item-subtext">Matrícula: <%= atleta.matricula %></span>
+                <span class="item-subtext">Nascimento: <%= atleta.dataNascimento || '-' %></span>
+                <span class="item-subtext">Modalidades: <%= Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : String(atleta.modalidade || '-') %></span>
+              </div>
+              <% if (atleta.status === 'Regular') { %>
+                <span class="status-tag" style="background: rgba(0, 255, 136, 0.12); color: #00ff88;">✓ Validado</span>
+              <% } else if (atleta.status === 'Analise') { %>
+                <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+              <% } else if (atleta.status === 'Reprovado') { %>
+                <span class="status-tag" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d;">✗ Reprovado</span>
+              <% } else { %>
+                <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <div class="feedback-empty"><p>Nenhum atleta masculino inscrito até o momento.</p></div>
+      <% } %>
     </div>
 
     <div style="background: rgba(255, 255, 255, 0.01); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
-      <h3 style="color: #ffffff; margin-bottom: 1rem; font-size: 1.1rem;">Lista de Atletas Registados</h3>
-      
-      <div style="overflow-x: auto;">
-        <table class="score-table">
-          <thead>
-            <tr style="color: #ece42d; border-bottom: 2px solid rgba(255,255,255,0.1);">
-              <th style="padding: 0.75rem 0.5rem;">Nome Completo</th>
-              <th>Matrícula</th>
-              <th>Data Nasc.</th>
-              <th>Modalidade</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (typeof atletas !== 'undefined' && atletas.length > 0) { %>
-              <% atletas.forEach(function(atleta) { %>
-                <tr class="<%= atleta.status === 'Regular' ? 'row--regular' : (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') ? 'row--pending' : 'row--irregular' %>">
-                  <td style="padding: 0.75rem 0.5rem; font-weight: 600;"><%= atleta.nome %></td>
-                  <td style="color: rgba(255,255,255,0.7);"><%= atleta.matricula %></td>
-                  <td style="color: rgba(255,255,255,0.7);"><%= atleta.dataNascimento || '-' %></td>
-                  <td>
-                    <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
-                    <% if (modalidadesAtleta.length > 1) { %>
-                      <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
-                        <% modalidadesAtleta.forEach(function(modalidade) { %>
-                          <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff; white-space: nowrap;"><%= modalidade %></span>
-                        <% }); %>
-                      </div>
-                    <% } else { %>
-                      <span class="status-tag" style="background: rgba(255,255,255,0.05); color: #fff;"><%= modalidadesAtleta.join(', ') %></span>
-                    <% } %>
-                  </td>
-                  <td>
-                    <% if (atleta.status === 'Regular') { %>
-                      <span style="color: #00ff88; font-weight: bold;">✓ Regular</span>
-                    <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
-                      <span style="color: #ffb700; font-weight: bold;"> ⏳ Pendente</span>
-                    <% } else { %>
-                      <span style="color: #ff4d4d; font-weight: bold;">⚠ Irregular</span>
-                    <% } %>
-                  </td>
-                  <td>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                      <a class="btn btn-secondary" href="/campus/atletas/editar/<%= atleta.id %>">Editar</a>
-                      <form action="/campus/atletas/excluir/<%= atleta.id %>" method="POST" onsubmit="return confirm('Deseja excluir este atleta?');">
-                        <button type="submit" class="btn btn-danger">Excluir</button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              <% }); %>
-            <% } else { %>
-              <tr>
-                <td colspan="6" class="feedback-empty">
-                  Nenhum atleta inscrito até o momento.
-                </td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 1.1rem;">Feminino</h3>
+        <span style="color: rgba(255,255,255,0.65); font-size: 0.92rem;"><%= atletasFemininos.length %> atleta(s)</span>
       </div>
 
-      <div style="margin-top: 1rem; display: flex; justify-content: flex-end; color: rgba(255,255,255,0.8); font-weight: 600;">
-        Total de atletas regulares: <span style="color: #00ff88; margin-left: 0.35rem;"><%= typeof quantidadeRegulares !== 'undefined' ? quantidadeRegulares : 0 %></span>
-      </div>
+      <% if (atletasFemininos.length) { %>
+        <ul class="data-list">
+          <% atletasFemininos.forEach(function(atleta) { %>
+            <li class="data-item">
+              <div class="item-info">
+                <strong class="item-name"><%= atleta.nome %></strong>
+                <span class="item-subtext">Matrícula: <%= atleta.matricula %></span>
+                <span class="item-subtext">Nascimento: <%= atleta.dataNascimento || '-' %></span>
+                <span class="item-subtext">Modalidades: <%= Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : String(atleta.modalidade || '-') %></span>
+              </div>
+              <% if (atleta.status === 'Regular') { %>
+                <span class="status-tag" style="background: rgba(0, 255, 136, 0.12); color: #00ff88;">✓ Validado</span>
+              <% } else if (atleta.status === 'Analise') { %>
+                <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+              <% } else if (atleta.status === 'Reprovado') { %>
+                <span class="status-tag" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d;">✗ Reprovado</span>
+              <% } else { %>
+                <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <div class="feedback-empty"><p>Nenhum atleta feminino inscrito até o momento.</p></div>
+      <% } %>
     </div>
-
-    <script>
-      (function () {
-        const checkboxes = Array.from(document.querySelectorAll('input[name="modalidades"]'));
-        const maxSelecionadas = 3;
-
-        function atualizarEstado() {
-          const marcadas = checkboxes.filter((item) => item.checked);
-          const bloqueadas = marcadas.length >= maxSelecionadas;
-
-          checkboxes.forEach((item) => {
-            if (!item.checked) {
-              item.disabled = bloqueadas;
-            } else {
-              item.disabled = false;
-            }
-          });
-        }
-
-        checkboxes.forEach((item) => {
-          item.addEventListener('change', () => {
-            const marcadas = checkboxes.filter((checkbox) => checkbox.checked);
-            if (marcadas.length > maxSelecionadas) {
-              item.checked = false;
-              alert('Selecione no máximo 3 modalidades.');
-            }
-            atualizarEstado();
-          });
-        });
-
-        atualizarEstado();
-      })();
-    </script>
 
     <footer class="dashboard-footer" style="margin-top: 2.5rem;">
       <div class="utility-actions">

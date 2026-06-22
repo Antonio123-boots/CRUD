@@ -1,6 +1,6 @@
 <section class="panel-card">
   <h1>Verificação de atletas</h1>
-  <p class="panel-subtitle">Escolha um campus para ver os atletas. Validado fica verde, reprovado fica vermelho.</p>
+  <p class="panel-subtitle">Escolha um campus para ver os atletas. Em análise fica amarelo, validado fica verde e reprovado fica vermelho.</p>
 
   <% if (typeof campusSelecionado === 'string' && campusSelecionado) { %>
     <div style="margin: 0 0 1rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
@@ -22,10 +22,12 @@
                 <small><%= modalidadesAtleta.join(', ') %> · <%= atleta.dataNascimento || '-' %></small><br>
                 <% if (atleta.status === 'Regular') { %>
                   <small style="color:#00ff88; font-weight:700;">● Validado</small>
-                <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
-                  <small style="color:#ffb700; font-weight:700;">● Pendente</small>
+                <% } else if (atleta.status === 'Analise') { %>
+                  <small style="color:#ffb700; font-weight:700;">● Em análise</small>
+                <% } else if (atleta.status === 'Reprovado') { %>
+                  <small style="color:#ff4d4d; font-weight:700;">● Reprovado</small>
                 <% } else { %>
-                  <small style="color:#ff4d4d; font-weight:700;">● Não validado</small>
+                  <small style="color:#ff4d4d; font-weight:700;">● Reprovado</small>
                 <% } %>
               </span>
               <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">

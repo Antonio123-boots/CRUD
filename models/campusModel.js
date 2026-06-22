@@ -32,6 +32,19 @@ function validarNomeCompleto(nome) {
   return valor.split(' ').filter(Boolean).length >= 2 ? valor : '';
 }
 
+function normalizarGenero(genero) {
+  const valor = String(genero || '').trim().toLowerCase();
+  if (valor === 'f' || valor === 'feminino') {
+    return 'Feminino';
+  }
+
+  if (valor === 'm' || valor === 'masculino') {
+    return 'Masculino';
+  }
+
+  return '';
+}
+
 function obterAnoAtual() {
   return new Date().getFullYear();
 }
@@ -48,7 +61,15 @@ function obterAnoEvento(opcoes = {}) {
 
 function normalizarStatusSolicitado(status) {
   const statusNormalizado = String(status || 'Regular').trim().toLowerCase();
-  return statusNormalizado.startsWith('pend') ? 'Pendente' : 'Regular';
+  if (statusNormalizado.startsWith('anal') || statusNormalizado.startsWith('pend')) {
+    return 'Analise';
+  }
+
+  if (statusNormalizado.startsWith('repro') || statusNormalizado.startsWith('irreg') || statusNormalizado.startsWith('nao')) {
+    return 'Reprovado';
+  }
+
+  return 'Regular';
 }
 
 function normalizarModalidades(valor) {
@@ -80,6 +101,36 @@ function atletaEhSub19(dados, opcoes = {}) {
 function obterModalidadesSalvas(dados) {
   const modalidades = normalizarModalidades(dados.modalidades || dados.modalidade);
   return modalidades.length ? modalidades : [];
+}
+
+function validarCamposObrigatoriosAtleta(dados) {
+  const nome = String(dados.nome || '').trim();
+  const matricula = String(dados.matricula || '').trim();
+  const genero = normalizarGenero(dados.genero) || 'Masculino';
+  const dataNascimento = String(dados.dataNascimento || '').trim();
+  const status = 'Analise';
+  const modalidades = obterModalidadesSalvas(dados);
+
+  if (!nome || !matricula || !dataNascimento || !modalidades.length) {
+    const erro = new Error('Preencha todos os campos antes de inscrever o atleta.');
+    erro.code = 'CAMPOS_OBRIGATORIOS';
+    throw erro;
+  }
+
+  return { nome, matricula, genero, dataNascimento, status, modalidades };
+}
+
+function normalizarStatusExibicao(status) {
+  return normalizarStatusSolicitado(status || 'Analise');
+}
+
+function extrairGeneroPorModalidade(modalidades = []) {
+  const lista = normalizarModalidades(modalidades);
+  if (lista.some((modalidade) => /feminino/i.test(modalidade))) {
+    return 'Feminino';
+  }
+
+  return 'Masculino';
 }
 
 function criarEstadoPadraoCampus() {
@@ -182,7 +233,9 @@ function getAtletas(campusNome) {
   return atletasCampus.filter((item) => item.campus === campusNome).map((item) => ({
     ...item,
     modalidades: normalizarModalidades(item.modalidades || item.modalidade),
-    modalidade: Array.isArray(item.modalidades) ? item.modalidades.join(', ') : item.modalidade
+    modalidade: Array.isArray(item.modalidades) ? item.modalidades.join(', ') : item.modalidade,
+    genero: item.genero || extrairGeneroPorModalidade(item.modalidades || item.modalidade),
+    status: normalizarStatusExibicao(item.status)
   }));
 }
 
@@ -191,7 +244,9 @@ function getAtletasParaAnalise(campusNome = null) {
   return base.map((item) => ({
     ...item,
     modalidades: normalizarModalidades(item.modalidades || item.modalidade),
-    modalidade: Array.isArray(item.modalidades) ? item.modalidades.join(', ') : item.modalidade
+    modalidade: Array.isArray(item.modalidades) ? item.modalidades.join(', ') : item.modalidade,
+    genero: item.genero || extrairGeneroPorModalidade(item.modalidades || item.modalidade),
+    status: normalizarStatusExibicao(item.status)
   })).sort((a, b) => a.campus.localeCompare(b.campus) || a.nome.localeCompare(b.nome));
 }
 
@@ -200,16 +255,26 @@ function getAtletaPorId(atletaId) {
   return atleta ? {
     ...atleta,
     modalidades: normalizarModalidades(atleta.modalidades || atleta.modalidade),
-    modalidade: Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : atleta.modalidade
+    modalidade: Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : atleta.modalidade,
+    genero: atleta.genero || extrairGeneroPorModalidade(atleta.modalidades || atleta.modalidade),
+    status: normalizarStatusExibicao(atleta.status)
   } : null;
 }
 
 function getQuantidadeRegulares(campusNome) {
-  return atletasCampus.filter((item) => item.campus === campusNome && item.status === 'Regular').length;
+  return atletasCampus.filter((item) => item.campus === campusNome && normalizarStatusExibicao(item.status) === 'Regular').length;
 }
 
 function getQuantidadePendentes(campusNome) {
-  return atletasCampus.filter((item) => item.campus === campusNome && (item.status === 'Pendente' || item.status === 'Pendente_Laudo')).length;
+  return getQuantidadeAnalise(campusNome);
+}
+
+function getQuantidadeAnalise(campusNome) {
+  return atletasCampus.filter((item) => item.campus === campusNome && normalizarStatusExibicao(item.status) === 'Analise').length;
+}
+
+function getQuantidadeReprovados(campusNome) {
+  return atletasCampus.filter((item) => item.campus === campusNome && normalizarStatusExibicao(item.status) === 'Reprovado').length;
 }
 
 function getQuantidadeTotal(campusNome) {
@@ -223,17 +288,18 @@ function getQuantidadeDisponivelRegular(campusNome, limiteRegularTotalCampus) {
     return Infinity;
   }
 
-  return Math.max(limite - getQuantidadeRegulares(campusNome), 0);
+  return Math.max(limite - getQuantidadeTotal(campusNome), 0);
 }
 
 // Cria um novo atleta com status regular ou pendente.
 function cadastrarAtleta(campusNome, dados, opcoes = {}) {
-  const matriculaNormalizada = normalizarMatricula(dados.matricula);
+  const campos = validarCamposObrigatoriosAtleta(dados);
+  const matriculaNormalizada = normalizarMatricula(campos.matricula);
   const matriculaExistente = atletasCampus.some((atleta) => atleta.campus === campusNome && normalizarMatricula(atleta.matricula) === matriculaNormalizada);
-  const statusSolicitado = normalizarStatusSolicitado(dados.status);
+  const statusSolicitado = campos.status;
   const limiteRegularTotalCampus = Number(opcoes.limiteRegularTotalCampus || 0);
-  const modalidadesSelecionadas = obterModalidadesSalvas(dados);
-  const nomeCompleto = validarNomeCompleto(dados.nome);
+  const modalidadesSelecionadas = campos.modalidades;
+  const nomeCompleto = validarNomeCompleto(campos.nome);
 
   if (matriculaExistente) {
     const erro = new Error('Já existe um atleta cadastrado com esta matrícula neste campus.');
@@ -241,7 +307,7 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (obterAnoNascimento(dados.dataNascimento) === null) {
+  if (obterAnoNascimento(campos.dataNascimento) === null) {
     const erro = new Error('Data de nascimento inválida.');
     erro.code = 'DATA_INVALIDA';
     throw erro;
@@ -253,7 +319,7 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (!atletaEhSub19(dados, opcoes)) {
+  if (!atletaEhSub19(campos, opcoes)) {
     const erro = new Error('A idade do atleta excede o limite permitido para esta categoria');
     erro.code = 'IDADE_LIMITE_EXCEDIDO';
     throw erro;
@@ -271,8 +337,8 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (statusSolicitado === 'Regular' && limiteRegularTotalCampus > 0 && getQuantidadeRegulares(campusNome) >= limiteRegularTotalCampus) {
-    const erro = new Error('O campus atingiu o limite de atletas regulares. Selecione Pendente para criar uma reserva.');
+  if (limiteRegularTotalCampus > 0 && getQuantidadeTotal(campusNome) >= limiteRegularTotalCampus) {
+    const erro = new Error('O campus atingiu o limite total de atletas permitido.');
     erro.code = 'LIMITE_REGULAR_EXCEDIDO';
     throw erro;
   }
@@ -283,8 +349,9 @@ function cadastrarAtleta(campusNome, dados, opcoes = {}) {
     matricula: matriculaNormalizada,
     modalidade: modalidadesSelecionadas.join(', '),
     modalidades: modalidadesSelecionadas,
-    dataNascimento: dados.dataNascimento,
+    dataNascimento: campos.dataNascimento,
     campus: campusNome,
+    genero: campos.genero,
     status: statusSolicitado
   };
   atletasCampus.push(atleta);
@@ -298,12 +365,13 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
     return null;
   }
 
-  const matriculaNormalizada = normalizarMatricula(dados.matricula);
+  const campos = validarCamposObrigatoriosAtleta(dados);
+  const matriculaNormalizada = normalizarMatricula(campos.matricula);
   const matriculaExistente = atletasCampus.some((item) => item.campus === campusNome && item.id !== Number(atletaId) && normalizarMatricula(item.matricula) === matriculaNormalizada);
-  const statusSolicitado = normalizarStatusSolicitado(dados.status || atleta.status);
+  const statusSolicitado = campos.status || atleta.status;
   const limiteRegularTotalCampus = Number(opcoes.limiteRegularTotalCampus || 0);
-  const modalidadesSelecionadas = obterModalidadesSalvas(dados);
-  const nomeCompleto = validarNomeCompleto(dados.nome);
+  const modalidadesSelecionadas = campos.modalidades;
+  const nomeCompleto = validarNomeCompleto(campos.nome);
 
   if (matriculaExistente) {
     const erro = new Error('Já existe um atleta cadastrado com esta matrícula neste campus.');
@@ -311,7 +379,7 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (obterAnoNascimento(dados.dataNascimento) === null) {
+  if (obterAnoNascimento(campos.dataNascimento) === null) {
     const erro = new Error('Data de nascimento inválida.');
     erro.code = 'DATA_INVALIDA';
     throw erro;
@@ -323,7 +391,7 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (!atletaEhSub19(dados, opcoes)) {
+  if (!atletaEhSub19(campos, opcoes)) {
     const erro = new Error('A idade do atleta excede o limite permitido para esta categoria');
     erro.code = 'IDADE_LIMITE_EXCEDIDO';
     throw erro;
@@ -341,10 +409,10 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
     throw erro;
   }
 
-  if (statusSolicitado === 'Regular') {
-    const regularesSemAtletaAtual = atletasCampus.filter((item) => item.campus === campusNome && item.status === 'Regular' && item.id !== Number(atletaId)).length;
-    if (limiteRegularTotalCampus > 0 && regularesSemAtletaAtual >= limiteRegularTotalCampus) {
-      const erro = new Error('O campus atingiu o limite de atletas regulares. Selecione Pendente para esta inscrição.');
+  if (limiteRegularTotalCampus > 0) {
+    const totalSemAtletaAtual = atletasCampus.filter((item) => item.campus === campusNome && item.id !== Number(atletaId)).length;
+    if (totalSemAtletaAtual >= limiteRegularTotalCampus) {
+      const erro = new Error('O campus atingiu o limite total de atletas permitido.');
       erro.code = 'LIMITE_REGULAR_EXCEDIDO';
       throw erro;
     }
@@ -354,7 +422,8 @@ function atualizarAtleta(atletaId, campusNome, dados, opcoes = {}) {
   atleta.matricula = matriculaNormalizada;
   atleta.modalidade = modalidadesSelecionadas.join(', ');
   atleta.modalidades = modalidadesSelecionadas;
-  atleta.dataNascimento = dados.dataNascimento;
+  atleta.dataNascimento = campos.dataNascimento;
+  atleta.genero = campos.genero;
   atleta.status = statusSolicitado;
   persistirEstadoCampus();
 
@@ -398,7 +467,7 @@ function substituirAtleta(campusNome, dados) {
     throw erro;
   }
 
-  const atleta = { id: Date.now(), ...dados, nome: nomeCompleto, campus: campusNome, modalidades: normalizarModalidades(dados.modalidades || dados.modalidade), status: 'Pendente' };
+  const atleta = { id: Date.now(), ...dados, nome: nomeCompleto, campus: campusNome, modalidades: normalizarModalidades(dados.modalidades || dados.modalidade), genero: normalizarGenero(dados.genero), status: 'Pendente' };
   atleta.modalidade = Array.isArray(atleta.modalidades) ? atleta.modalidades.join(', ') : dados.modalidade;
   atletasCampus.push(atleta);
   persistirEstadoCampus();
@@ -413,6 +482,8 @@ module.exports = {
   getAtletaPorId,
   getQuantidadeRegulares,
   getQuantidadePendentes,
+  getQuantidadeAnalise,
+  getQuantidadeReprovados,
   getQuantidadeTotal,
   getQuantidadeDisponivelRegular,
   cadastrarAtleta,

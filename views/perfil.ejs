@@ -58,6 +58,55 @@
     <% if (publicMode || viewer.tipo === 'campus') { %>
       <section class="dashboard-section">
 
+        <style>
+          .campus-panel-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 1rem;
+            align-items: start;
+          }
+
+          .compact-panel {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(236, 228, 45, 0.1);
+          }
+
+          .scroll-list {
+            max-height: 320px;
+            overflow: auto;
+            padding-right: 0.35rem;
+          }
+
+          .day-chip-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+          }
+
+          .day-chip {
+            padding: 0.55rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.82);
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.03);
+          }
+
+          .day-chip.is-active {
+            background: rgba(236, 228, 45, 0.16);
+            border-color: rgba(236, 228, 45, 0.45);
+            color: #ece42d;
+          }
+
+          @media (max-width: 900px) {
+            .campus-panel-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        </style>
+
         <% if (!publicMode && viewer && viewer.tipo === 'campus') { %>
           <div style="margin-top: 0.5rem; margin-bottom: 1rem; padding: 1rem 1.1rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255, 255, 255, 0.02);">
             <h3 style="color: #ffffff; margin: 0 0 0.6rem; font-size: 1.05rem;">Painel do Competidor</h3>
@@ -66,10 +115,85 @@
           </div>
         <% } %>
 
-        <div style="margin-top: 1rem; background: rgba(255, 255, 255, 0.02); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(236, 228, 45, 0.1);">
-          <h3 style="color: #ffffff; margin-bottom: 0.75rem; font-size: 1.05rem;">Modalidades inscritas</h3>
+        <div class="campus-panel-grid" style="margin-top: 1rem;">
+          <div class="compact-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+            <h3 style="color: #ffffff; margin: 0; font-size: 1.05rem;">Jogos do campus</h3>
+            <span style="color: rgba(255,255,255,0.65); font-size: 0.92rem;">Selecione um dia para ver os confrontos</span>
+          </div>
+
+          <% if (diasJogosCampus && diasJogosCampus.length) { %>
+            <div class="day-chip-row" style="margin-bottom: 1rem;">
+              <% diasJogosCampus.forEach((dia) => { %>
+                <a href="/perfil?dia=<%= encodeURIComponent(dia) %>#jogos-campus" class="day-chip <%= diaJogosSelecionado === dia ? 'is-active' : '' %>"><%= dia %></a>
+              <% }) %>
+            </div>
+
+            <% const jogosDoDia = jogosCampusPorDia && diaJogosSelecionado ? (jogosCampusPorDia[diaJogosSelecionado] || []) : []; %>
+            <div id="jogos-campus">
+              <% if (jogosDoDia.length) { %>
+                <ul class="data-list scroll-list">
+                  <% jogosDoDia.forEach((jogo) => { %>
+                    <li class="data-item">
+                      <div class="item-info">
+                        <strong class="item-name"><%= jogo.modalidade %></strong>
+                        <span class="item-subtext"><%= jogo.data %> · <%= jogo.horario %></span>
+                        <span class="item-subtext"><%= jogo.casa %> x <%= jogo.fora %></span>
+                      </div>
+                      <div class="item-score-box">
+                        <span class="score-display"><%= jogo.placar %></span>
+                      </div>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <div class="feedback-empty"><p>Nenhum jogo encontrado para este dia.</p></div>
+              <% } %>
+            </div>
+          <% } else { %>
+            <div class="feedback-empty"><p>Não existem jogos do campus configurados.</p></div>
+          <% } %>
+          </div>
+
+          <div class="compact-panel">
+        <div class="dashboard-tabs" role="tablist" style="margin-top: 0;">
+          <button type="button" class="tab-trigger is-active" data-target="meus-atletas"> Atletas Inscritos</button>
+          <button type="button" class="tab-trigger" data-target="modalidades-campus"> Modalidades Inscritas</button>
+        </div>
+
+        <div class="dashboard-view is-active" id="meus-atletas">
+          <% if (listaAtletas.length) { %>
+            <ul class="data-list scroll-list">
+              <% listaAtletas.forEach((atleta) => { %>
+                <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
+                <li class="data-item">
+                  <div class="item-info">
+                    <strong class="item-name"><%= atleta.nome %></strong>
+                    <span class="item-subtext">Nascimento: <%= atleta.dataNascimento %></span>
+                    <span class="item-subtext">Modalidades: <%= modalidadesAtleta.join(', ') %></span>
+                  </div>
+                  <% if (atleta.status === 'Regular') { %>
+                    <span class="status-tag" style="background: rgba(0, 255, 136, 0.12); color: #00ff88;">✓ Validado</span>
+                   <% } else if (atleta.status === 'Analise') { %>
+                     <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+                   <% } else if (atleta.status === 'Reprovado') { %>
+                     <span class="status-tag" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d;">✗ Reprovado</span>
+                  <% } else { %>
+                     <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Em análise</span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <div class="feedback-empty">
+              <p>Nenhum atleta inscrito neste campus até o momento.</p>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="dashboard-view" id="modalidades-campus">
           <% if (listaModalidades.length) { %>
-            <ul class="data-list">
+            <ul class="data-list scroll-list">
               <% listaModalidades.forEach((modalidade) => { %>
                 <li class="data-item">
                   <div class="item-info">
@@ -82,60 +206,7 @@
             <div class="feedback-empty"><p>Nenhuma modalidade inscrita para este campus.</p></div>
           <% } %>
         </div>
-        
-        <div class="dashboard-tabs" role="tablist">
-          <button type="button" class="tab-trigger is-active" data-target="meus-atletas">🏃‍♂️ Atletas Inscritos</button>
-          <button type="button" class="tab-trigger" data-target="meus-jogos">📅 Jogos do Campus</button>
-        </div>
-
-        <div class="dashboard-view is-active" id="meus-atletas">
-          <% if (listaAtletas.length) { %>
-            <ul class="data-list">
-              <% listaAtletas.forEach((atleta) => { %>
-                <% const modalidadesAtleta = Array.isArray(atleta.modalidades) ? atleta.modalidades : String(atleta.modalidade || '').split(',').map((item) => item.trim()).filter(Boolean); %>
-                <li class="data-item">
-                  <div class="item-info">
-                    <strong class="item-name"><%= atleta.nome %></strong>
-                    <span class="item-subtext">Nascimento: <%= atleta.dataNascimento %></span>
-                    <span class="item-subtext">Modalidades: <%= modalidadesAtleta.join(', ') %></span>
-                  </div>
-                  <% if (atleta.status === 'Regular') { %>
-                    <span class="status-tag" style="background: rgba(0, 255, 136, 0.12); color: #00ff88;">✓ Validado</span>
-                  <% } else if (atleta.status === 'Pendente' || atleta.status === 'Pendente_Laudo') { %>
-                    <span class="status-tag" style="background: rgba(255, 183, 0, 0.12); color: #ffb700;">⏳ Pendente</span>
-                  <% } else { %>
-                    <span class="status-tag" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d;">✗ Não validado</span>
-                  <% } %>
-                </li>
-              <% }) %>
-            </ul>
-          <% } else { %>
-            <div class="feedback-empty">
-              <p>Nenhum atleta inscrito neste campus até o momento.</p>
-            </div>
-          <% } %>
-        </div>
-
-        <div class="dashboard-view" id="meus-jogos">
-          <% if (jogosCampus.length) { %>
-            <ul class="data-list">
-              <% jogosCampus.forEach((jogo) => { %>
-                <li class="data-item">
-                  <div class="item-info">
-                    <strong class="item-name"><%= jogo.modalidade %></strong>
-                    <span class="item-subtext"><%= jogo.data %> · <%= jogo.horario %></span>
-                  </div>
-                  <div class="item-score-box">
-                    <span class="score-display"><%= jogo.placar %></span>
-                  </div>
-                </li>
-              <% }) %>
-            </ul>
-          <% } else { %>
-            <div class="feedback-empty">
-              <p>Não existem jogos agendados para este campus.</p>
-            </div>
-          <% } %>
+          </div>
         </div>
       </section>
     <% } %>
@@ -159,7 +230,7 @@
 </section>
 
 <script>
-  // 1. Alternância Visual entre as Abas (Atletas / Jogos)
+  // 1. Alternância Visual entre as Abas (Atletas / Modalidades)
   document.querySelectorAll('.tab-trigger').forEach((button) => {
     button.addEventListener('click', () => {
       const targetId = button.dataset.target;

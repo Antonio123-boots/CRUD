@@ -248,13 +248,13 @@
 .primary-save-btn {
     background: #ece42d;
     color: #1c1d3b;
-    padding: 0 2.5rem;
+    padding: 15 2.0rem;
     box-shadow: 0 4px 15px rgba(236, 228, 45, 0.2);
+
 }
 
 .primary-save-btn:hover {
     background: #fff;
-    transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
 }
 

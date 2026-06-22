@@ -8,7 +8,7 @@
     "inicio_inscricao_atletas": "2026-06-20",
     "fim_inscricao_atletas": "2026-06-22",
     "inicio_sorteio_chaves": "2026-06-23",
-    "limite_atletas_total_campus": 60
+    "limite_atletas_total_campus": 15
   },
   "campus": {
     "inscricoesCampus": {
@@ -51,8 +51,16 @@
         "Futsal Feminino"
       ],
       "IFC Fraiburgo": [
+        "Basquete Masculino",
         "Futsal Masculino",
-        "Voleibol Masculino"
+        "Futsal Feminino",
+        "Handebol Masculino",
+        "Tênis de Mesa Masculino",
+        "Tênis de Mesa Feminino",
+        "Voleibol Masculino",
+        "Voleibol Feminino",
+        "Vôlei de Praia Feminino",
+        "Xadrez Feminino"
       ],
       "IFC Ibirama": [
         "Futsal Feminino",
@@ -148,15 +156,6 @@
         "status": "Regular"
       },
       {
-        "id": 7,
-        "nome": "João Victor",
-        "campus": "IFC Fraiburgo",
-        "matricula": "20260007",
-        "modalidade": "Futsal Masculino",
-        "dataNascimento": "2006-07-07",
-        "status": "Regular"
-      },
-      {
         "id": 8,
         "nome": "Luiza Costa",
         "campus": "IFC Ibirama",
@@ -211,15 +210,6 @@
         "status": "Regular"
       },
       {
-        "id": 14,
-        "nome": "Aline Freitas",
-        "campus": "IFC Sombrio",
-        "matricula": "20260014",
-        "modalidade": "Futsal Feminino",
-        "dataNascimento": "2007-05-14",
-        "status": "Regular"
-      },
-      {
         "id": 15,
         "nome": "Thiago Cardoso",
         "campus": "IFC Videira",
@@ -254,7 +244,8 @@
         ],
         "dataNascimento": "2008-10-23",
         "campus": "IFC Sombrio",
-        "status": "Regular"
+        "status": "Regular",
+        "genero": "Masculino"
       },
       {
         "id": 1782006522707,
@@ -267,6 +258,156 @@
         ],
         "dataNascimento": "2008-10-16",
         "campus": "IFC Blumenau",
+        "status": "Regular"
+      },
+      {
+        "id": 1782047154663,
+        "nome": "Gabriel de freitas",
+        "matricula": "20292827",
+        "modalidade": "Voleibol Masculino",
+        "modalidades": [
+          "Voleibol Masculino"
+        ],
+        "dataNascimento": "2008-02-12",
+        "campus": "IFC Blumenau",
+        "status": "Regular"
+      },
+      {
+        "id": 1782086798684,
+        "nome": "Guilherme Pereira Mondardo",
+        "matricula": "767676667",
+        "modalidade": "Basquete Masculino, Tênis de Mesa Masculino, Voleibol Masculino",
+        "modalidades": [
+          "Basquete Masculino",
+          "Tênis de Mesa Masculino",
+          "Voleibol Masculino"
+        ],
+        "dataNascimento": "2008-04-24",
+        "campus": "IFC Fraiburgo",
+        "status": "Regular"
+      },
+      {
+        "id": 1782087493964,
+        "nome": "Guilherme Scandolara Selau",
+        "matricula": "23100987",
+        "modalidade": "Tênis de Mesa Masculino, Voleibol Masculino",
+        "modalidades": [
+          "Tênis de Mesa Masculino",
+          "Voleibol Masculino"
+        ],
+        "dataNascimento": "2009-04-20",
+        "campus": "IFC Fraiburgo",
+        "status": "Regular"
+      },
+      {
+        "id": 1782087536721,
+        "nome": "Erick Inácio Trajano",
+        "matricula": "23400987",
+        "modalidade": "Basquete Masculino, Futsal Masculino, Tênis de Mesa Masculino",
+        "modalidades": [
+          "Basquete Masculino",
+          "Futsal Masculino",
+          "Tênis de Mesa Masculino"
+        ],
+        "dataNascimento": "2008-09-23",
+        "campus": "IFC Fraiburgo",
+        "status": "Regular"
+      },
+      {
+        "id": 1782087609754,
+        "nome": "Antonio Gonçalves Stuart",
+        "matricula": "43534356",
+        "modalidade": "Futsal Masculino, Tênis de Mesa Masculino, Voleibol Masculino",
+        "modalidades": [
+          "Futsal Masculino",
+          "Tênis de Mesa Masculino",
+          "Voleibol Masculino"
+        ],
+        "dataNascimento": "2008-10-23",
+        "campus": "IFC Fraiburgo",
+        "status": "Regular"
+      },
+      {
+        "id": 1782087643853,
+        "nome": "Gabriel Oliveira",
+        "matricula": "76767676",
+        "modalidade": "Basquete Masculino, Handebol Masculino, Tênis de Mesa Masculino",
+        "modalidades": [
+          "Basquete Masculino",
+          "Handebol Masculino",
+          "Tênis de Mesa Masculino"
+        ],
+        "dataNascimento": "2009-06-05",
+        "campus": "IFC Fraiburgo",
+        "status": "Regular"
+      },
+      {
+        "id": 1782090034832,
+        "nome": "Armando Mendes Neto",
+        "matricula": "19192323",
+        "modalidade": "Futsal Masculino, Tênis de Mesa Masculino, Voleibol Masculino",
+        "modalidades": [
+          "Futsal Masculino",
+          "Tênis de Mesa Masculino",
+          "Voleibol Masculino"
+        ],
+        "dataNascimento": "2009-04-04",
+        "campus": "IFC Sombrio",
+        "status": "Regular"
+      },
+      {
+        "id": 1782092443817,
+        "nome": "Valentina Roxo",
+        "matricula": "2109987",
+        "modalidade": "Basquete Feminino, Futsal Feminino",
+        "modalidades": [
+          "Basquete Feminino",
+          "Futsal Feminino"
+        ],
+        "dataNascimento": "2009-05-04",
+        "campus": "IFC Sombrio",
+        "genero": "Feminino",
+        "status": "Regular"
+      },
+      {
+        "id": 1782093468923,
+        "nome": "Gabriela da Silva",
+        "matricula": "12121310",
+        "modalidade": "Basquete Feminino",
+        "modalidades": [
+          "Basquete Feminino"
+        ],
+        "dataNascimento": "2008-05-04",
+        "campus": "IFC Sombrio",
+        "genero": "Feminino",
+        "status": "Regular"
+      },
+      {
+        "id": 1782096699589,
+        "nome": "Felipe Duarte",
+        "matricula": "34343434",
+        "modalidade": "Atletismo Masculino, Tênis de Mesa Masculino",
+        "modalidades": [
+          "Atletismo Masculino",
+          "Tênis de Mesa Masculino"
+        ],
+        "dataNascimento": "2008-03-03",
+        "campus": "IFC Sombrio",
+        "genero": "Masculino",
+        "status": "Regular"
+      },
+      {
+        "id": 1782096727872,
+        "nome": "Suzane Souza",
+        "matricula": "54657687",
+        "modalidade": "Basquete Feminino, Vôlei de Praia Feminino",
+        "modalidades": [
+          "Basquete Feminino",
+          "Vôlei de Praia Feminino"
+        ],
+        "dataNascimento": "2008-10-10",
+        "campus": "IFC Sombrio",
+        "genero": "Feminino",
         "status": "Regular"
       }
     ]
